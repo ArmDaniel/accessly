@@ -1,0 +1,49 @@
+<!doctype html>
+<!--
+  lang is required by WCAG 3.1.1 and is set here rather than by script, so it is
+  correct before the first byte of content is parsed.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!--
+      No maximum-scale and no user-scalable=no: capping zoom fails WCAG 1.4.4,
+      and it is the single most common accessibility defect on the web.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="description"
+      content="Accessly audits your website against WCAG 2.1, scores it, and watches it for regressions every time you ship."
+    />
+    <meta name="theme-color" content="#0a5c63" />
+
+    <title>Accessly — prove your website is accessible</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Atkinson Hyperlegible was designed by the Braille Institute specifically to
+      raise character recognition for readers with low vision. It is a
+      functional choice, not a stylistic one.
+    -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="padding: 2rem; font-family: system-ui, sans-serif">
+        <h1>Accessly needs JavaScript</h1>
+        <p>
+          The scanner runs in your browser. If you cannot enable JavaScript, email
+          <a href="mailto:support@accessly.eu">support@accessly.eu</a> and we will run the audit for
+          you and send the report.
+        </p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

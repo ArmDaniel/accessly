@@ -1,0 +1,30 @@
+{
+  "name": "@accessly/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The Accessly web experience: marketing site, self-service scanner, and printable reports.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "audit:self": "tsx scripts/self-audit.tsx"
+  },
+  "dependencies": {
+    "@accessly/contracts": "*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/react": "^18.3.17",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "vite": "^6.0.5",
+    "tsx": "^4.19.2"
+  }
+}

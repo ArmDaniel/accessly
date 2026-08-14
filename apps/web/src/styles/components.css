@@ -1,0 +1,629 @@
+/* Reusable components. */
+
+/* ── Buttons ───────────────────────────────────────────────────────────────*/
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--a-space-2);
+  /* 2.5.5 Target Size: never below 44×44, including on a mouse-driven desktop. */
+  min-height: var(--a-target-min);
+  min-width: var(--a-target-min);
+  padding: var(--a-space-3) var(--a-space-5);
+  border: 2px solid transparent;
+  border-radius: var(--a-radius);
+  font: inherit;
+  font-weight: 700;
+  font-size: var(--a-text-base);
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--a-transition),
+    border-color var(--a-transition),
+    color var(--a-transition);
+}
+
+.btn:disabled,
+.btn[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.btn--primary {
+  background: var(--a-brand);
+  border-color: var(--a-brand);
+  color: var(--a-on-brand);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--a-brand-strong);
+  border-color: var(--a-brand-strong);
+}
+
+.btn--secondary {
+  background: var(--a-surface);
+  border-color: var(--a-brand);
+  color: var(--a-brand-strong);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: var(--a-brand-tint);
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--a-ink-muted);
+  padding-inline: var(--a-space-4);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--a-brand-tint);
+  color: var(--a-brand-strong);
+}
+
+.btn--danger {
+  background: var(--a-danger);
+  border-color: var(--a-danger);
+  color: var(--a-on-danger);
+}
+
+.btn--sm {
+  min-height: 2.25rem;
+  padding: var(--a-space-2) var(--a-space-4);
+  font-size: var(--a-text-sm);
+}
+
+/*
+ * A small control still needs a 44px target. We grow the hit area with a
+ * pseudo-element instead of padding so the visual size is unchanged.
+ */
+.btn--sm {
+  position: relative;
+}
+
+.btn--sm::after {
+  content: '';
+  position: absolute;
+  inset: 50% 0 0 50%;
+  width: max(100%, var(--a-target-min));
+  height: max(100%, var(--a-target-min));
+  translate: -50% -50%;
+}
+
+/* ── Cards ─────────────────────────────────────────────────────────────────*/
+
+.card {
+  padding: var(--a-space-5);
+  background: var(--a-surface-raised);
+  border: 1px solid var(--a-border-subtle);
+  border-radius: var(--a-radius-lg);
+  box-shadow: var(--a-shadow-sm);
+}
+
+.card--interactive:hover {
+  border-color: var(--a-border-strong);
+  box-shadow: var(--a-shadow);
+}
+
+.card h3 {
+  margin-bottom: var(--a-space-2);
+}
+
+.card p:last-child {
+  margin-bottom: 0;
+}
+
+.card__icon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-bottom: var(--a-space-4);
+  border-radius: var(--a-radius);
+  background: var(--a-brand-tint);
+  color: var(--a-brand-strong);
+}
+
+/* ── Badges ────────────────────────────────────────────────────────────────*/
+
+/*
+ * Every badge carries a text label. Colour is a redundant cue, never the only
+ * one — that is 1.4.1 Use of Color, and it is why there is no "red dot" variant
+ * anywhere in this design system.
+ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--a-space-2);
+  padding: 0.2em 0.65em;
+  border: 1px solid transparent;
+  border-radius: var(--a-radius-full);
+  font-size: var(--a-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.badge--neutral {
+  background: var(--a-surface-sunken);
+  border-color: var(--a-border-strong);
+  color: var(--a-ink-muted);
+}
+.badge--success {
+  background: var(--a-success-tint);
+  border-color: var(--a-success);
+  color: var(--a-success);
+}
+.badge--danger {
+  background: var(--a-danger-tint);
+  border-color: var(--a-danger);
+  color: var(--a-danger);
+}
+.badge--warning {
+  background: var(--a-warning-tint);
+  border-color: var(--a-warning);
+  color: var(--a-warning);
+}
+.badge--info {
+  background: var(--a-info-tint);
+  border-color: var(--a-info);
+  color: var(--a-info);
+}
+
+.badge--level {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Callouts ──────────────────────────────────────────────────────────────*/
+
+.callout {
+  display: flex;
+  gap: var(--a-space-4);
+  padding: var(--a-space-5);
+  border: 1px solid var(--a-border-strong);
+  border-inline-start-width: 5px;
+  border-radius: var(--a-radius);
+  background: var(--a-surface-sunken);
+}
+
+.callout__body > :last-child {
+  margin-bottom: 0;
+}
+
+.callout__title {
+  font-weight: 700;
+  margin-bottom: var(--a-space-2);
+}
+
+.callout--info {
+  background: var(--a-info-tint);
+  border-color: var(--a-info);
+}
+.callout--success {
+  background: var(--a-success-tint);
+  border-color: var(--a-success);
+}
+.callout--warning {
+  background: var(--a-warning-tint);
+  border-color: var(--a-warning);
+}
+.callout--danger {
+  background: var(--a-danger-tint);
+  border-color: var(--a-danger);
+}
+
+.callout__icon {
+  flex: none;
+  margin-top: 0.15em;
+}
+
+/* ── Forms ─────────────────────────────────────────────────────────────────*/
+
+.field {
+  display: grid;
+  gap: var(--a-space-2);
+  margin-bottom: var(--a-space-5);
+}
+
+.field__label {
+  font-weight: 700;
+}
+
+/*
+ * "(required)" is spelled out rather than shown as an asterisk. An asterisk
+ * means nothing to a screen reader unless it is explained, and the explanation
+ * is usually at the top of the form where nobody reads it.
+ */
+.field__required {
+  color: var(--a-ink-muted);
+  font-weight: 400;
+  font-size: var(--a-text-sm);
+}
+
+.field__hint {
+  color: var(--a-ink-muted);
+  font-size: var(--a-text-sm);
+}
+
+.field__error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--a-space-2);
+  color: var(--a-danger);
+  font-weight: 700;
+  font-size: var(--a-text-sm);
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  min-height: var(--a-target-min);
+  padding: var(--a-space-3) var(--a-space-4);
+  /* 1.4.11: this border measures 3.5:1 against the surface. */
+  border: 2px solid var(--a-border-strong);
+  border-radius: var(--a-radius);
+  background: var(--a-surface);
+  color: var(--a-ink);
+  font: inherit;
+  font-size: var(--a-text-base);
+}
+
+.textarea {
+  min-height: 12rem;
+  resize: vertical;
+  font-family: var(--a-font-mono);
+  font-size: var(--a-text-sm);
+  line-height: 1.5;
+}
+
+.input:hover,
+.textarea:hover,
+.select:hover {
+  border-color: var(--a-brand);
+}
+
+.input[aria-invalid='true'],
+.textarea[aria-invalid='true'],
+.select[aria-invalid='true'] {
+  border-color: var(--a-danger);
+  /* The thicker border is a second, non-colour cue that the field is invalid. */
+  border-width: 3px;
+}
+
+.fieldset {
+  margin: 0 0 var(--a-space-5);
+  padding: var(--a-space-4);
+  border: 1px solid var(--a-border-subtle);
+  border-radius: var(--a-radius);
+}
+
+.fieldset legend {
+  padding-inline: var(--a-space-2);
+  font-weight: 700;
+}
+
+.radio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--a-space-4);
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: var(--a-space-2);
+  min-height: var(--a-target-min);
+  padding-inline-end: var(--a-space-2);
+  cursor: pointer;
+}
+
+.radio-option input {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--a-brand);
+}
+
+/* ── Score display ─────────────────────────────────────────────────────────*/
+
+.score {
+  display: flex;
+  align-items: center;
+  gap: var(--a-space-5);
+}
+
+.score__dial {
+  flex: none;
+}
+
+.score__value {
+  font-size: var(--a-text-3xl);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.score__band {
+  font-size: var(--a-text-sm);
+  color: var(--a-ink-muted);
+}
+
+/*
+ * Band colours are paired with the band's *name* everywhere they appear, so
+ * the information survives greyscale, colour blindness and forced-colors mode.
+ */
+.band-excellent {
+  color: var(--a-success);
+}
+.band-good {
+  color: var(--a-success);
+}
+.band-fair {
+  color: var(--a-warning);
+}
+.band-poor {
+  color: var(--a-danger);
+}
+.band-critical {
+  color: var(--a-danger);
+}
+
+/* ── Meter ─────────────────────────────────────────────────────────────────*/
+
+.meter {
+  height: 0.6rem;
+  border-radius: var(--a-radius-full);
+  background: var(--a-surface-sunken);
+  border: 1px solid var(--a-border-strong);
+  overflow: hidden;
+}
+
+.meter__fill {
+  height: 100%;
+  background: var(--a-brand);
+}
+
+/* ── Tables ────────────────────────────────────────────────────────────────*/
+
+.table-wrap {
+  overflow-x: auto;
+  /*
+   * A scrollable region must be focusable so keyboard users can scroll it.
+   * The component sets tabindex="0" and role="region" with a label.
+   */
+  border: 1px solid var(--a-border-subtle);
+  border-radius: var(--a-radius);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  font-size: var(--a-text-sm);
+}
+
+.table caption {
+  padding: var(--a-space-4);
+  text-align: start;
+  font-weight: 700;
+  border-bottom: 1px solid var(--a-border-subtle);
+}
+
+.table th,
+.table td {
+  padding: var(--a-space-3) var(--a-space-4);
+  text-align: start;
+  vertical-align: top;
+  border-bottom: 1px solid var(--a-border-subtle);
+}
+
+.table thead th {
+  background: var(--a-surface-sunken);
+  font-size: var(--a-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--a-ink-muted);
+  position: sticky;
+  top: 0;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* ── Disclosure / accordion ────────────────────────────────────────────────*/
+
+.disclosure {
+  border: 1px solid var(--a-border-subtle);
+  border-radius: var(--a-radius);
+  margin-bottom: var(--a-space-3);
+  background: var(--a-surface-raised);
+}
+
+.disclosure__trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--a-space-3);
+  width: 100%;
+  min-height: var(--a-target-min);
+  padding: var(--a-space-4);
+  border: 0;
+  border-radius: var(--a-radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-align: start;
+  cursor: pointer;
+}
+
+.disclosure__trigger:hover {
+  background: var(--a-surface-sunken);
+}
+
+.disclosure__marker {
+  flex: none;
+  margin-inline-start: auto;
+  transition: transform var(--a-transition);
+}
+
+.disclosure__trigger[aria-expanded='true'] .disclosure__marker {
+  transform: rotate(180deg);
+}
+
+.disclosure__panel {
+  padding: 0 var(--a-space-4) var(--a-space-4);
+  border-top: 1px solid var(--a-border-subtle);
+  padding-top: var(--a-space-4);
+}
+
+/* ── Finding cards ─────────────────────────────────────────────────────────*/
+
+.finding {
+  border: 1px solid var(--a-border-subtle);
+  border-inline-start: 5px solid var(--a-border-strong);
+  border-radius: var(--a-radius);
+  padding: var(--a-space-5);
+  margin-bottom: var(--a-space-4);
+  background: var(--a-surface-raised);
+}
+
+.finding--critical {
+  border-inline-start-color: var(--a-danger);
+}
+.finding--serious {
+  border-inline-start-color: var(--a-warning);
+}
+.finding--moderate {
+  border-inline-start-color: var(--a-info);
+}
+.finding--minor {
+  border-inline-start-color: var(--a-border-strong);
+}
+
+.finding__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--a-space-2);
+  margin-bottom: var(--a-space-3);
+}
+
+.finding__title {
+  font-size: var(--a-text-lg);
+  font-weight: 700;
+  margin: 0;
+  flex: 1 1 18rem;
+}
+
+.finding__snippet {
+  display: block;
+  overflow-x: auto;
+  padding: var(--a-space-3);
+  margin: var(--a-space-3) 0 0;
+  background: var(--a-surface-sunken);
+  border: 1px solid var(--a-border-subtle);
+  border-radius: var(--a-radius-sm);
+  font-family: var(--a-font-mono);
+  font-size: var(--a-text-xs);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.finding__remedy {
+  margin-top: var(--a-space-3);
+  padding: var(--a-space-4);
+  background: var(--a-brand-tint);
+  border-radius: var(--a-radius-sm);
+}
+
+.finding__remedy > :last-child {
+  margin-bottom: 0;
+}
+
+/* ── Stat tiles ────────────────────────────────────────────────────────────*/
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--a-space-4);
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--a-space-6);
+}
+
+.stat {
+  padding: var(--a-space-4);
+  border: 1px solid var(--a-border-subtle);
+  border-radius: var(--a-radius);
+  background: var(--a-surface-raised);
+}
+
+.stat__value {
+  display: block;
+  font-size: var(--a-text-2xl);
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat__label {
+  display: block;
+  color: var(--a-ink-muted);
+  font-size: var(--a-text-sm);
+}
+
+/* ── Utilities ─────────────────────────────────────────────────────────────*/
+
+.muted {
+  color: var(--a-ink-muted);
+}
+.lede {
+  font-size: var(--a-text-lg);
+  line-height: var(--a-leading-loose);
+  color: var(--a-ink-muted);
+}
+.flow > * + * {
+  margin-top: var(--a-space-4);
+}
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--a-space-3);
+  align-items: center;
+}
+.text-center {
+  text-align: center;
+}
+.mb-0 {
+  margin-bottom: 0;
+}
+
+/* A spinner that respects reduced motion by falling back to a static label. */
+.spinner {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  border: 2px solid currentColor;
+  border-block-start-color: transparent;
+  border-radius: 50%;
+  animation: a-spin 700ms linear infinite;
+}
+
+@keyframes a-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+    border-block-start-color: currentColor;
+    opacity: 0.6;
+  }
+}

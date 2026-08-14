@@ -1,0 +1,17 @@
+{
+  "name": "@accessly/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The Accessly rule engine: parses a document, runs WCAG 2.1 rules against it, and scores the result.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@accessly/contracts": "*",
+    "linkedom": "^0.18.9"
+  }
+}

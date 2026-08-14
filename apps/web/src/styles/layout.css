@@ -1,0 +1,414 @@
+/* Page shell, containers, and section rhythm. */
+
+.app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main {
+  flex: 1;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--a-container);
+  margin-inline: auto;
+  padding-inline: var(--a-space-5);
+}
+
+.container--narrow {
+  max-width: var(--a-container-narrow);
+}
+
+.section {
+  padding-block: var(--a-space-8);
+}
+
+.section--tight {
+  padding-block: var(--a-space-6);
+}
+
+.section--sunken {
+  background: var(--a-surface-sunken);
+}
+
+.section--inverse {
+  background: var(--a-surface-inverse);
+  color: var(--a-surface);
+}
+
+/* On the inverse surface the link colour must be re-checked, not inherited. */
+.section--inverse a {
+  color: var(--a-on-inverse-link);
+}
+
+.section--inverse h2,
+.section--inverse h3 {
+  color: inherit;
+}
+
+/* ── Skip link ─────────────────────────────────────────────────────────────
+ * First focusable element in the DOM, so a keyboard user reaches it with one
+ * Tab from the address bar. Visible the instant it takes focus.
+ */
+.skip-link:focus {
+  position: fixed;
+  inset-block-start: var(--a-space-3);
+  inset-inline-start: var(--a-space-3);
+  z-index: 100;
+  display: inline-block;
+  padding: var(--a-space-3) var(--a-space-5);
+  background: var(--a-surface);
+  color: var(--a-ink);
+  border: 2px solid var(--a-ink);
+  border-radius: var(--a-radius);
+  box-shadow: var(--a-shadow-lg);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────*/
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--a-surface);
+  border-bottom: 1px solid var(--a-border-subtle);
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--a-space-5);
+  min-height: 4.5rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--a-space-3);
+  color: var(--a-ink);
+  font-weight: 700;
+  font-size: var(--a-text-lg);
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  padding: var(--a-space-2);
+  margin-inline-start: calc(var(--a-space-2) * -1);
+  border-radius: var(--a-radius);
+}
+
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--a-radius-sm);
+  background: var(--a-brand);
+  color: var(--a-on-brand);
+  flex: none;
+}
+
+.primary-nav {
+  margin-inline-start: auto;
+}
+
+.primary-nav__list {
+  display: flex;
+  align-items: center;
+  gap: var(--a-space-1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.primary-nav__link,
+.primary-nav__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--a-space-2);
+  min-height: var(--a-target-min);
+  padding: var(--a-space-2) var(--a-space-3);
+  border: 0;
+  border-radius: var(--a-radius);
+  background: transparent;
+  color: var(--a-ink-muted);
+  font: inherit;
+  font-size: var(--a-text-sm);
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primary-nav__link:hover,
+.primary-nav__trigger:hover {
+  background: var(--a-brand-tint);
+  color: var(--a-brand-strong);
+  text-decoration: none;
+}
+
+/*
+ * The current page is marked with aria-current="page" in the markup. The
+ * underline here is a second, non-colour cue for 1.4.1 — colour alone would
+ * not distinguish it.
+ */
+.primary-nav__link[aria-current='page'] {
+  color: var(--a-brand-strong);
+  box-shadow: inset 0 -3px 0 var(--a-brand);
+}
+
+.primary-nav__item {
+  position: relative;
+}
+
+.primary-nav__trigger[aria-expanded='true'] {
+  background: var(--a-brand-tint);
+  color: var(--a-brand-strong);
+}
+
+.primary-nav__chevron {
+  transition: transform var(--a-transition);
+}
+
+.primary-nav__trigger[aria-expanded='true'] .primary-nav__chevron {
+  transform: rotate(180deg);
+}
+
+.primary-nav__panel {
+  position: absolute;
+  inset-block-start: calc(100% + var(--a-space-2));
+  inset-inline-start: 0;
+  min-width: 20rem;
+  padding: var(--a-space-3);
+  background: var(--a-surface-raised);
+  border: 1px solid var(--a-border-strong);
+  border-radius: var(--a-radius-lg);
+  box-shadow: var(--a-shadow-lg);
+  list-style: none;
+  margin: 0;
+}
+
+.primary-nav__panel a {
+  display: block;
+  padding: var(--a-space-3);
+  border-radius: var(--a-radius);
+  color: var(--a-ink);
+  text-decoration: none;
+}
+
+.primary-nav__panel a:hover {
+  background: var(--a-brand-tint);
+}
+
+.primary-nav__panel a:focus-visible {
+  /* Keep the ring inside the panel bounds. */
+  outline-offset: -1px;
+}
+
+.primary-nav__panel .desc {
+  display: block;
+  margin-top: 2px;
+  color: var(--a-ink-muted);
+  font-size: var(--a-text-sm);
+  font-weight: 400;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--a-space-3);
+}
+
+.nav-toggle {
+  display: none;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────────*/
+
+.site-footer {
+  background: var(--a-surface-inverse);
+  color: var(--a-on-inverse);
+  padding-block: var(--a-space-8) var(--a-space-6);
+  margin-top: var(--a-space-9);
+}
+
+.site-footer a {
+  color: var(--a-on-inverse);
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 0.06em;
+}
+
+.site-footer a:hover {
+  text-decoration-color: currentColor;
+}
+
+.site-footer__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--a-space-6);
+}
+
+.site-footer h2,
+.site-footer h3 {
+  font-size: var(--a-text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--a-on-inverse-heading);
+  margin-bottom: var(--a-space-3);
+}
+
+.site-footer ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--a-space-2);
+}
+
+.site-footer__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--a-space-4);
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--a-space-7);
+  padding-top: var(--a-space-5);
+  border-top: 1px solid var(--a-border-strong);
+  font-size: var(--a-text-sm);
+  color: var(--a-on-inverse-muted);
+}
+
+/* ── Hero ──────────────────────────────────────────────────────────────────*/
+
+.hero {
+  padding-block: var(--a-space-9) var(--a-space-8);
+  background:
+    radial-gradient(70rem 32rem at 82% -18%, var(--a-brand-tint), transparent 62%),
+    var(--a-surface);
+}
+
+.hero__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: var(--a-space-8);
+  align-items: center;
+}
+
+.hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--a-space-2);
+  padding: var(--a-space-2) var(--a-space-4);
+  border-radius: var(--a-radius-full);
+  background: var(--a-brand-tint);
+  color: var(--a-brand-strong);
+  font-size: var(--a-text-sm);
+  font-weight: 700;
+  margin-bottom: var(--a-space-5);
+}
+
+.hero__lede {
+  font-size: var(--a-text-lg);
+  line-height: var(--a-leading-loose);
+  color: var(--a-ink-muted);
+  max-width: 42ch;
+  margin-bottom: var(--a-space-6);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--a-space-4);
+}
+
+/* ── Generic grids ─────────────────────────────────────────────────────────*/
+
+.grid {
+  display: grid;
+  gap: var(--a-space-5);
+}
+
+.grid--3 {
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+}
+
+.grid--2 {
+  grid-template-columns: repeat(auto-fit, minmax(21rem, 1fr));
+}
+
+.stack > * + * {
+  margin-top: var(--a-space-4);
+}
+
+.section-head {
+  max-width: 46rem;
+  margin-bottom: var(--a-space-7);
+}
+
+.section-head p {
+  font-size: var(--a-text-lg);
+  color: var(--a-ink-muted);
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────
+ * Breakpoints are in rem so they respond to the user's font size too: at 200%
+ * zoom the layout collapses to a single column exactly as it would on a phone,
+ * which is what 1.4.10 Reflow asks for.
+ */
+@media (max-width: 60rem) {
+  .hero__inner {
+    grid-template-columns: 1fr;
+  }
+
+  /*
+   * Deliberately no `order` reordering here. Moving the sample card above the
+   * heading would make the visual sequence differ from the DOM sequence, which
+   * is exactly what 1.3.2 Meaningful Sequence prohibits — a sighted user and a
+   * screen reader user would encounter the page in different orders.
+   */
+}
+
+@media (max-width: 52rem) {
+  .nav-toggle {
+    display: inline-flex;
+    margin-inline-start: auto;
+  }
+
+  .primary-nav {
+    display: none;
+    margin-inline-start: 0;
+  }
+
+  .primary-nav[data-open='true'] {
+    display: block;
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    padding: var(--a-space-4);
+    background: var(--a-surface);
+    border-bottom: 1px solid var(--a-border-strong);
+    box-shadow: var(--a-shadow-lg);
+  }
+
+  .primary-nav__list {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--a-space-1);
+  }
+
+  .primary-nav__panel {
+    position: static;
+    box-shadow: none;
+    border: 0;
+    border-inline-start: 2px solid var(--a-border-subtle);
+    border-radius: 0;
+    min-width: 0;
+    margin-inline-start: var(--a-space-4);
+  }
+
+  .header-actions .btn--ghost {
+    display: none;
+  }
+}

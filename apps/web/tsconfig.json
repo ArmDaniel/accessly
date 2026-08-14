@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "baseUrl": "../..",
+    "paths": {
+      "@accessly/contracts": ["packages/contracts/src/index.ts"],
+      "@accessly/core": ["packages/core/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*", "scripts/**/*", "test/**/*"]
+}

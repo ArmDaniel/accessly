@@ -1,0 +1,34 @@
+{
+  "name": "accessly",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Accessly \u2014 evidence-grade digital accessibility auditing, scoring and continuous monitoring.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:api dev:web",
+    "dev:api": "npm run dev -w @accessly/api",
+    "dev:web": "npm run dev -w @accessly/web",
+    "build": "npm run build -w @accessly/web",
+    "typecheck": "tsc -b --pretty",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "tsc -b --pretty",
+    "audit:self": "npm run audit:self -w @accessly/web",
+    "verify": "npm run typecheck && npm test && npm run audit:self"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

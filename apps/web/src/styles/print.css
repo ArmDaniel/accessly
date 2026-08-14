@@ -1,0 +1,124 @@
+/*
+ * Print styles for the audit report.
+ *
+ * A printed accessibility report is a compliance artefact — it gets attached to
+ * procurement paperwork and read by people who were not in the room. So it has
+ * to stand alone: link destinations spelled out, no interactive chrome, and no
+ * information that was only carried by colour on screen.
+ */
+
+@media print {
+  @page {
+    margin: 18mm 14mm;
+  }
+
+  :root {
+    /* Force the light palette; a dark theme wastes toner and prints illegibly. */
+    --a-ink: #000000;
+    --a-ink-muted: #333333;
+    --a-surface: #ffffff;
+    --a-surface-sunken: #f4f4f4;
+    --a-surface-raised: #ffffff;
+    --a-border-strong: #666666;
+    --a-border-subtle: #cccccc;
+    --a-brand: #00454b;
+    --a-brand-tint: #f0f6f6;
+  }
+
+  body {
+    background: #ffffff;
+    color: #000000;
+    font-size: 10.5pt;
+    line-height: 1.45;
+  }
+
+  /* Chrome that means nothing on paper. */
+  .site-header,
+  .site-footer,
+  .skip-link,
+  .no-print,
+  nav,
+  button,
+  .btn {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  main,
+  .container {
+    max-width: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  /*
+   * Spell out where links go. On screen the text is enough because the link is
+   * clickable; on paper it is not.
+   */
+  .report a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.85em;
+    word-break: break-all;
+    color: #333333;
+  }
+
+  /* Keep a finding and its remediation on the same page. */
+  .finding,
+  .card,
+  .callout,
+  .stat {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #999999;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+    break-inside: avoid;
+  }
+
+  table {
+    break-inside: auto;
+  }
+
+  thead {
+    display: table-header-group; /* Repeat headers across page breaks. */
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  .table thead th {
+    position: static;
+  }
+
+  .report__section {
+    break-before: page;
+  }
+
+  .report__section:first-of-type {
+    break-before: auto;
+  }
+
+  /*
+   * Impact and level are carried by a left border on screen. On paper that
+   * border may not reproduce reliably, so the printed report also prints the
+   * label as text — see ReportView, which renders both.
+   */
+  .finding__snippet {
+    white-space: pre-wrap;
+    word-break: break-all;
+    background: #f4f4f4;
+  }
+
+  .table-wrap {
+    overflow: visible;
+    border: 0;
+  }
+}

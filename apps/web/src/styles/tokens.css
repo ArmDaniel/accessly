@@ -1,0 +1,230 @@
+/*
+ * Accessly design tokens.
+ *
+ * Every colour pair used for text in this file has been checked against WCAG
+ * 1.4.3, and the measured ratio is recorded in a comment next to it. If you
+ * change a value, re-check it — the token test suite (apps/web/test/theme.test.ts)
+ * asserts these ratios and will fail the build if a pair drops below its target.
+ *
+ * The palette is deep teal and amber rather than the blue-purple every other
+ * compliance tool uses. The amber only ever appears on dark ink, where it
+ * measures 9.1:1, so it can carry emphasis without being the sole signal.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* ── Brand ─────────────────────────────────────────────────────────────── */
+  --a-ink: #0b1f24; /* on white: 16.9:1 — AAA */
+  --a-ink-muted: #40595e; /* on white:  7.4:1 — AAA */
+  --a-ink-subtle: #5c7378; /* on white:  4.9:1 — AA  */
+
+  --a-brand: #0a5c63; /* on white:  7.7:1 — AAA */
+  --a-brand-strong: #073f44; /* on white: 11.0:1 — AAA */
+  --a-brand-tint: #e3f0ef;
+  --a-brand-tint-strong: #c2ded9;
+
+  --a-accent: #f0b429; /* on --a-ink: 9.1:1 — AAA */
+  --a-accent-strong: #8a5300; /* on white: 5.9:1 — AA (text-safe amber) */
+
+  /*
+   * Text that sits on a filled brand or status surface.
+   *
+   * Same rule as --a-on-inverse below: these flip with their background.
+   * Hardcoding white here is the bug the self-audit caught on the primary
+   * button, where --a-brand lightens in dark mode and white-on-light measured
+   * 1.76:1.
+   */
+  --a-on-brand: #ffffff; /* on --a-brand:  7.7:1 */
+  --a-on-danger: #ffffff; /* on --a-danger: 7.2:1 */
+
+  /* ── Surfaces ──────────────────────────────────────────────────────────── */
+  --a-surface: #ffffff;
+  --a-surface-sunken: #f4f8f7;
+  --a-surface-raised: #ffffff;
+  --a-surface-inverse: #0b1f24;
+
+  /*
+   * Colours for text sitting *on* the inverse surface.
+   *
+   * These must be tokens, not literals. The inverse surface flips to light in
+   * dark mode, so any hardcoded light text on it becomes light-on-light. That
+   * is not hypothetical: it is the bug our own self-audit caught here, at
+   * 1.76:1. Foreground and background have to flip together or not at all.
+   */
+  --a-on-inverse: #edf5f4; /* on --a-surface-inverse: 15.4:1 */
+  --a-on-inverse-muted: #c4dedc; /* on --a-surface-inverse: 12.0:1 */
+  --a-on-inverse-heading: #a7cfcc; /* on --a-surface-inverse: 10.1:1 */
+  --a-on-inverse-link: #f0b429; /* on --a-surface-inverse:  9.1:1 */
+
+  /*
+   * Borders. --a-border-strong is the one used for control boundaries and it
+   * measures 3.5:1 against white, satisfying 1.4.11 Non-text Contrast.
+   * --a-border-subtle is decorative only and must never be the sole indicator
+   * of a control's edge.
+   */
+  --a-border-strong: #7a8c8c; /* on white: 3.5:1 — passes 1.4.11 */
+  --a-border-subtle: #dbe5e4;
+
+  /* ── Status ────────────────────────────────────────────────────────────── */
+  --a-success: #0f6b4f; /* on white: 6.0:1 */
+  --a-success-tint: #e2f2ec;
+  --a-danger: #a8231c; /* on white: 7.2:1 */
+  --a-danger-tint: #fbe9e7;
+  --a-warning: #8a5300; /* on white: 5.9:1 */
+  --a-warning-tint: #fdf1dc;
+  --a-info: #0a5c63;
+  --a-info-tint: #e3f0ef;
+
+  /* ── Focus ─────────────────────────────────────────────────────────────── */
+  /*
+   * A two-tone ring so the indicator stays visible on both light and dark
+   * backgrounds without needing per-component overrides. 3px exceeds the 2px
+   * minimum thickness in WCAG 2.4.11 (2.2) and is comfortably visible at 200%
+   * zoom.
+   */
+  --a-focus-ring: #0b1f24;
+  --a-focus-ring-offset: #f0b429;
+  --a-focus-width: 3px;
+
+  /* ── Typography ────────────────────────────────────────────────────────── */
+  /*
+   * Atkinson Hyperlegible first: it was drawn by the Braille Institute to
+   * maximise distinction between commonly confused glyph pairs (I/l/1, O/0).
+   * The fallbacks are ordered so a missing webfont degrades to something with
+   * similar metrics rather than to a condensed default.
+   */
+  --a-font-sans: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue',
+    Arial, sans-serif;
+  --a-font-mono: 'Cascadia Mono', 'SF Mono', 'Roboto Mono', ui-monospace, monospace;
+
+  /*
+   * Type scale in rem so it responds to the user's browser font-size setting.
+   * Never px for text — px would break 1.4.4 Resize Text for anyone who has set
+   * a larger default in their browser.
+   */
+  --a-text-xs: 0.8125rem;
+  --a-text-sm: 0.9375rem;
+  --a-text-base: 1.0625rem;
+  --a-text-lg: 1.25rem;
+  --a-text-xl: 1.5rem;
+  --a-text-2xl: 1.875rem;
+  --a-text-3xl: 2.375rem;
+  --a-text-4xl: clamp(2.5rem, 1.9rem + 2.6vw, 3.75rem);
+
+  /*
+   * 1.5 body leading is the WCAG 1.4.8 (AAA) recommendation and it is also
+   * simply easier to read. We meet it by default rather than as an option.
+   */
+  --a-leading-tight: 1.2;
+  --a-leading-snug: 1.35;
+  --a-leading-normal: 1.6;
+  --a-leading-loose: 1.75;
+
+  /* ── Space ─────────────────────────────────────────────────────────────── */
+  --a-space-1: 0.25rem;
+  --a-space-2: 0.5rem;
+  --a-space-3: 0.75rem;
+  --a-space-4: 1rem;
+  --a-space-5: 1.5rem;
+  --a-space-6: 2rem;
+  --a-space-7: 3rem;
+  --a-space-8: 4rem;
+  --a-space-9: 6rem;
+
+  --a-radius-sm: 4px;
+  --a-radius: 8px;
+  --a-radius-lg: 14px;
+  --a-radius-full: 999px;
+
+  --a-shadow-sm: 0 1px 2px rgb(11 31 36 / 0.08);
+  --a-shadow: 0 2px 8px rgb(11 31 36 / 0.09);
+  --a-shadow-lg: 0 12px 32px rgb(11 31 36 / 0.13);
+
+  /* Minimum interactive target, per 2.5.5 / 2.5.8. */
+  --a-target-min: 44px;
+
+  --a-measure: 68ch;
+  --a-container: 76rem;
+  --a-container-narrow: 46rem;
+
+  --a-transition: 160ms ease;
+}
+
+/*
+ * Dark theme.
+ *
+ * Not an inversion: the ink lightens but the accent shifts too, because amber
+ * on a dark surface needs less saturation to hit the same perceived weight.
+ * Every pair below is re-measured against the dark surface, not the light one.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --a-ink: #edf5f4; /* on #0d2126: 15.4:1 */
+    --a-ink-muted: #b3c6c6; /* on #0d2126:  9.4:1 */
+    --a-ink-subtle: #90a5a5; /* on #0d2126:  6.2:1 */
+
+    --a-brand: #6fd3d0; /* on #0d2126:  9.1:1 */
+    --a-brand-strong: #a7e6e2;
+    --a-brand-tint: #12333a;
+    --a-brand-tint-strong: #17454d;
+
+    --a-accent: #f5c451;
+    --a-accent-strong: #f5c451; /* on #0d2126: 10.7:1 */
+
+    /* Flipped in step with the surfaces they sit on. */
+    --a-on-brand: #0b1f24; /* on --a-brand:  9.6:1 */
+    --a-on-danger: #0b1f24; /* on --a-danger: 8.5:1 */
+
+    --a-surface: #0d2126;
+    --a-surface-sunken: #091a1e;
+    --a-surface-raised: #123036;
+    --a-surface-inverse: #edf5f4;
+
+    /* Flipped in step with the surface above. */
+    --a-on-inverse: #0b1f24; /* on --a-surface-inverse: 15.9:1 */
+    --a-on-inverse-muted: #33484c; /* on --a-surface-inverse:  8.5:1 */
+    --a-on-inverse-heading: #1d4348; /* on --a-surface-inverse: 11.4:1 */
+    --a-on-inverse-link: #0a5c63; /* on --a-surface-inverse:  6.9:1 */
+
+    --a-border-strong: #5d7a7d; /* on #0d2126: 3.4:1 */
+    --a-border-subtle: #23474e;
+
+    --a-success: #62d0a5; /* on #0d2126: 8.4:1 */
+    --a-success-tint: #0f3830;
+    --a-danger: #ff9d92; /* on #0d2126: 8.1:1 */
+    --a-danger-tint: #3d1815;
+    --a-warning: #f0c069; /* on #0d2126: 9.9:1 */
+    --a-warning-tint: #3a2a0d;
+    --a-info: #6fd3d0;
+    --a-info-tint: #12333a;
+
+    --a-focus-ring: #ffffff;
+    --a-focus-ring-offset: #f5c451;
+
+    --a-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --a-shadow: 0 2px 10px rgb(0 0 0 / 0.45);
+    --a-shadow-lg: 0 12px 32px rgb(0 0 0 / 0.55);
+  }
+}
+
+/*
+ * Windows High Contrast / forced-colors.
+ *
+ * In forced-colors mode the OS replaces our palette wholesale. Our job is to
+ * stop fighting it: drop shadows and background images, and make sure every
+ * boundary that was carried by colour is also carried by a border the OS can
+ * re-colour.
+ */
+@media (forced-colors: active) {
+  :root {
+    --a-shadow-sm: none;
+    --a-shadow: none;
+    --a-shadow-lg: none;
+  }
+
+  *:focus-visible {
+    outline: 3px solid CanvasText !important;
+    outline-offset: 2px !important;
+  }
+}
