@@ -627,3 +627,97 @@
     opacity: 0.6;
   }
 }
+
+/* ── Journey player ────────────────────────────────────────────────────────*/
+
+/*
+ * The player replays an accessibility transcript, not a video, so none of this
+ * is chrome around a media element — it is a list with a position. Every colour
+ * is a token, and the current frame is marked by aria-current as well as by the
+ * highlight, because the highlight alone would fail 1.4.1.
+ */
+
+.player__controls {
+  margin-top: var(--a-space-4);
+}
+
+.player__scrub {
+  width: 100%;
+  max-width: 40rem;
+  /* The native range control keeps its platform keyboard behaviour: arrows,
+     Home/End and Page Up/Down all work without a line of JavaScript. */
+  accent-color: var(--a-brand);
+}
+
+.player__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--a-space-4);
+  margin: 0;
+}
+
+.player__facts dt {
+  font-size: var(--a-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--a-ink-muted);
+}
+
+.player__facts dd {
+  margin: var(--a-space-1) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.player__timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 26rem;
+  overflow-y: auto;
+}
+
+.player__frame {
+  display: flex;
+  gap: var(--a-space-3);
+  align-items: baseline;
+  width: 100%;
+  padding: var(--a-space-2) var(--a-space-3);
+  text-align: start;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--a-radius-sm);
+  cursor: pointer;
+}
+
+.player__frame:hover {
+  background: var(--a-surface-sunken);
+}
+
+.player__frame--current {
+  background: var(--a-brand-tint);
+  border-color: var(--a-brand);
+  font-weight: 600;
+}
+
+.player__frame-time {
+  flex: 0 0 3.5rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--a-ink-muted);
+}
+
+.player__frame-summary {
+  flex: 1 1 auto;
+}
+
+.expectations {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.expectations > li + li {
+  margin-top: var(--a-space-3);
+}

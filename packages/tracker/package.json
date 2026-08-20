@@ -1,0 +1,16 @@
+{
+  "name": "@accessly/tracker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The browser tracker: records an accessibility trace of a real user session.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@accessly/contracts": "*"
+  }
+}

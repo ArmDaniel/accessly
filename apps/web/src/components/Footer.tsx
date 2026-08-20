@@ -11,6 +11,7 @@ const COLUMNS = [
       { to: '/scan', label: 'Scan a page' },
       { to: '/dashboard', label: 'Your dashboard' },
       { to: '/dashboard/monitoring', label: 'Monitoring dashboard' },
+      { to: '/dashboard/journeys', label: 'Recorded sessions' },
     ],
   },
   {

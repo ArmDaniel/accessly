@@ -17,13 +17,19 @@ export default defineConfig({
     alias: {
       '@accessly/contracts': r('./packages/contracts/src/index.ts'),
       '@accessly/core': r('./packages/core/src/index.ts'),
+      '@accessly/media': r('./packages/media/src/index.ts'),
+      '@accessly/tracker': r('./packages/tracker/src/index.ts'),
       '@web': r('./apps/web/src'),
     },
   },
   test: {
     globals: true,
     environment: 'node',
-    environmentMatchGlobs: [['apps/web/test/**', 'jsdom']],
+    environmentMatchGlobs: [
+      ['apps/web/test/**', 'jsdom'],
+      // The tracker is browser code; jsdom gives it real coverage without a browser.
+      ['packages/tracker/test/**', 'jsdom'],
+    ],
     setupFiles: [r('./test/setup.ts')],
     include: [
       'packages/*/test/**/*.test.ts',

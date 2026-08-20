@@ -5,6 +5,8 @@ import { operableRules } from './operable.js';
 import { understandableRules } from './understandable.js';
 import { robustRules } from './robust.js';
 import { extendedRules } from './extended.js';
+import { structureRules } from './structure.js';
+import { captionRules } from './captions.js';
 
 export const allRules: readonly Rule[] = [
   ...perceivableRules,
@@ -12,6 +14,8 @@ export const allRules: readonly Rule[] = [
   ...understandableRules,
   ...robustRules,
   ...extendedRules,
+  ...structureRules,
+  ...captionRules,
 ];
 
 /**
@@ -27,4 +31,4 @@ export function createDefaultRegistry(): RuleRegistry {
 
 export const defaultRegistry: RuleRegistry = createDefaultRegistry();
 
-export { perceivableRules, operableRules, understandableRules, robustRules, extendedRules };
+export { perceivableRules, operableRules, understandableRules, robustRules, extendedRules, structureRules, captionRules };

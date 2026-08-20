@@ -65,6 +65,7 @@ export function auditHtml(options: AuditOptions): AuditReport {
     target,
     subject: {
       url: options.url,
+      mediaKind: 'html',
       title: parsed.title,
       lang: parsed.lang,
       contentHash: parsed.contentHash,

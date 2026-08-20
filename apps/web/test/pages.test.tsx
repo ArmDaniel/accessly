@@ -366,6 +366,72 @@ describe('scanner form', () => {
   });
 });
 
+describe('scanning a document', () => {
+  it('offers documents and media as a third source', () => {
+    renderAt('/scan');
+    expect(screen.getByRole('radio', { name: /a document or media file/i })).toBeInTheDocument();
+  });
+
+  it('swaps to a labelled file input, with the formats named in text', async () => {
+    const user = userEvent.setup();
+    renderAt('/scan');
+
+    await user.click(screen.getByRole('radio', { name: /a document or media file/i }));
+
+    const input = screen.getByLabelText(/^Document /i);
+    expect(input).toHaveAttribute('type', 'file');
+
+    // The accept list is a hint to the file picker, never the check — an
+    // extension is the least reliable thing about a file — so the formats are
+    // also spelled out where everyone can read them.
+    const describedBy = input.getAttribute('aria-describedby');
+    const hint = document.getElementById(describedBy!.split(' ')[0]!);
+    expect(hint?.textContent).toMatch(/PDF, Word, PowerPoint/i);
+    expect(input.getAttribute('accept')).toContain('.pdf');
+  });
+
+  it('says which file is too large rather than failing silently', async () => {
+    const user = userEvent.setup();
+    renderAt('/scan');
+
+    await user.click(screen.getByRole('radio', { name: /a document or media file/i }));
+
+    const input = screen.getByLabelText(/^Document /i) as HTMLInputElement;
+    const huge = new File(['x'], 'huge.pdf', { type: 'application/pdf' });
+    // A real 6 MB buffer would make this test slow for no extra coverage.
+    Object.defineProperty(huge, 'size', { value: 6_000_000 });
+    await user.upload(input, huge);
+
+    await user.click(screen.getByRole('button', { name: /run the scan/i }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/huge\.pdf is 6 MB\. The limit is 5 MB\./);
+    expect(alert).toHaveFocus();
+  });
+
+  it('asks for a file before submitting an empty upload', async () => {
+    const user = userEvent.setup();
+    renderAt('/scan');
+
+    await user.click(screen.getByRole('radio', { name: /a document or media file/i }));
+    await user.click(screen.getByRole('button', { name: /run the scan/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/choose the document/i);
+  });
+
+  it('does not carry an error from one source across to another', async () => {
+    const user = userEvent.setup();
+    renderAt('/scan');
+
+    await user.click(screen.getByRole('button', { name: /run the scan/i }));
+    await screen.findByRole('alert');
+
+    // An error read for the URL field is simply wrong for a file input.
+    await user.click(screen.getByRole('radio', { name: /a document or media file/i }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Live regions and route changes
 // ─────────────────────────────────────────────────────────────────────────────

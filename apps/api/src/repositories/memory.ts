@@ -1,5 +1,8 @@
 import type {
   AuditReport,
+  Journey,
+  JourneyReport,
+  JourneyTrace,
   Organisation,
   Site,
   Watch,
@@ -7,11 +10,14 @@ import type {
 } from '@accessly/contracts';
 import type {
   AuditRepository,
+  JourneyReportRepository,
+  JourneyRepository,
   OrganisationRepository,
   Page,
   PageQuery,
   Repositories,
   SiteRepository,
+  TraceRepository,
   WatchEventRepository,
   WatchRepository,
 } from './types.js';
@@ -230,6 +236,92 @@ export class InMemoryWatchEventRepository implements WatchEventRepository {
   }
 }
 
+export class InMemoryJourneyRepository implements JourneyRepository {
+  readonly #store = new Map<string, Journey>();
+
+  async create(journey: Journey): Promise<Journey> {
+    this.#store.set(journey.id, clone(journey));
+    return clone(journey);
+  }
+
+  async update(id: string, patch: Partial<Journey>): Promise<Journey | null> {
+    const existing = this.#store.get(id);
+    if (!existing) return null;
+    // `id` and `organisationId` are re-pinned from the stored record: a patch
+    // must never be able to move a journey into another tenant.
+    const updated = {
+      ...existing,
+      ...patch,
+      id: existing.id,
+      organisationId: existing.organisationId,
+    };
+    this.#store.set(id, updated);
+    return clone(updated);
+  }
+
+  async findById(id: string): Promise<Journey | null> {
+    const found = this.#store.get(id);
+    return found ? clone(found) : null;
+  }
+
+  async listByOrganisation(organisationId: string): Promise<readonly Journey[]> {
+    return [...this.#store.values()]
+      .filter((journey) => journey.organisationId === organisationId)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      .map(clone);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    return this.#store.delete(id);
+  }
+}
+
+export class InMemoryTraceRepository implements TraceRepository {
+  readonly #store = new Map<string, JourneyTrace>();
+
+  async save(trace: JourneyTrace): Promise<JourneyTrace> {
+    this.#store.set(trace.id, clone(trace));
+    return clone(trace);
+  }
+
+  /**
+   * Tenancy is a lookup parameter rather than a caller's check.
+   *
+   * Trace ids come from the customer's browser, so they are guessable in a way
+   * server-issued uuids are not. Scoping the read here means a guessed id
+   * reads as missing instead of as somebody else's session.
+   */
+  async findById(id: string, organisationId: string): Promise<JourneyTrace | null> {
+    const found = this.#store.get(id);
+    if (!found || found.organisationId !== organisationId) return null;
+    return clone(found);
+  }
+}
+
+export class InMemoryJourneyReportRepository implements JourneyReportRepository {
+  readonly #store = new Map<string, JourneyReport>();
+
+  async save(report: JourneyReport): Promise<JourneyReport> {
+    this.#store.set(report.id, clone(report));
+    return clone(report);
+  }
+
+  async findById(id: string): Promise<JourneyReport | null> {
+    const found = this.#store.get(id);
+    return found ? clone(found) : null;
+  }
+
+  async list(
+    query: PageQuery & { organisationId: string; journeyId?: string | undefined },
+  ): Promise<Page<JourneyReport>> {
+    const sorted = [...this.#store.values()]
+      .filter((report) => report.organisationId === query.organisationId)
+      .filter((report) => (query.journeyId ? report.journeyId === query.journeyId : true))
+      .sort((a, b) => b.startedAt.localeCompare(a.startedAt) || b.id.localeCompare(a.id));
+    return paginate(sorted, query);
+  }
+}
+
 export function createInMemoryRepositories(): Repositories {
   return {
     organisations: new InMemoryOrganisationRepository(),
@@ -237,5 +329,8 @@ export function createInMemoryRepositories(): Repositories {
     audits: new InMemoryAuditRepository(),
     watches: new InMemoryWatchRepository(),
     watchEvents: new InMemoryWatchEventRepository(),
+    journeys: new InMemoryJourneyRepository(),
+    traces: new InMemoryTraceRepository(),
+    journeyReports: new InMemoryJourneyReportRepository(),
   };
 }

@@ -2,8 +2,11 @@ import type {
   AuditDiff,
   AuditReport,
   CreateAuditInput,
+  CreateJourneyInput,
   CreateSiteInput,
   CreateWatchInput,
+  Journey,
+  JourneyReport,
   ProblemDetails,
   Site,
   UpdateWatchInput,
@@ -85,6 +88,23 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+/**
+ * Base64 without a data-URL round trip.
+ *
+ * `FileReader` would give us a `data:` URL we then have to slice, and `btoa`
+ * over a whole megabyte-scale string via `String.fromCharCode(...bytes)`
+ * overflows the argument limit. Chunking is the boring, correct way.
+ */
+export async function toBase64(buffer: ArrayBuffer): Promise<string> {
+  const bytes = new Uint8Array(buffer);
+  const CHUNK = 0x8000;
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + CHUNK));
+  }
+  return btoa(binary);
+}
+
 export interface CriterionSummary {
   readonly id: string;
   readonly title: string;
@@ -150,6 +170,27 @@ export const api = {
 
   listWatchEvents: (watchId: string) =>
     request<Paginated<WatchEvent>>(`/v1/watches/${watchId}/events`),
+
+  // ── Journeys ───────────────────────────────────────────────────────────────
+
+  listJourneys: () => request<Paginated<Journey>>('/v1/journeys'),
+
+  createJourney: (input: CreateJourneyInput) =>
+    request<Journey>('/v1/journeys', { method: 'POST', body: JSON.stringify(input) }),
+
+  deleteJourney: (id: string) => request<void>(`/v1/journeys/${id}`, { method: 'DELETE' }),
+
+  listJourneyReports: (options: { journeyId?: string; limit?: number } = {}) => {
+    const params = new URLSearchParams();
+    if (options.limit !== undefined) params.set('limit', String(options.limit));
+    const query = params.toString();
+    const path = options.journeyId
+      ? `/v1/journeys/${options.journeyId}/reports`
+      : '/v1/journey-reports';
+    return request<Paginated<JourneyReport>>(`${path}${query ? `?${query}` : ''}`);
+  },
+
+  getJourneyReport: (id: string) => request<JourneyReport>(`/v1/journey-reports/${id}`),
 
   rules: () =>
     request<{

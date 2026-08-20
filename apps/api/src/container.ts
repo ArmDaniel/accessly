@@ -5,6 +5,7 @@ import { createInMemoryRepositories } from './repositories/memory.js';
 import type { Repositories } from './repositories/types.js';
 import { AuditService } from './services/audit.service.js';
 import { HttpHtmlFetcher, type HtmlFetcher } from './services/fetcher.js';
+import { JourneyService } from './services/journey.service.js';
 import { SiteService } from './services/site.service.js';
 import { WatchService } from './services/watch.service.js';
 import { WatcherRunner } from './services/watcher.js';
@@ -37,6 +38,7 @@ export interface Container {
     readonly audits: AuditService;
     readonly sites: SiteService;
     readonly watches: WatchService;
+    readonly journeys: JourneyService;
   };
 }
 
@@ -64,6 +66,7 @@ export function createContainer(config: Config, overrides: ContainerOverrides = 
     clock,
     ids,
     registry,
+    maxDocumentBytes: config.maxDocumentBytes,
   });
 
   const sites = new SiteService({
@@ -76,6 +79,15 @@ export function createContainer(config: Config, overrides: ContainerOverrides = 
   const watches = new WatchService({
     watches: repositories.watches,
     watchEvents: repositories.watchEvents,
+    sites: repositories.sites,
+    clock,
+    ids,
+  });
+
+  const journeys = new JourneyService({
+    journeys: repositories.journeys,
+    traces: repositories.traces,
+    reports: repositories.journeyReports,
     sites: repositories.sites,
     clock,
     ids,
@@ -101,6 +113,6 @@ export function createContainer(config: Config, overrides: ContainerOverrides = 
     registry,
     clock,
     watcher,
-    services: { audits, sites, watches },
+    services: { audits, sites, watches, journeys },
   };
 }

@@ -2,14 +2,15 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2023"],
+    "lib": [
+      "ES2023"
+    ],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
@@ -18,18 +19,36 @@
     "noUnusedParameters": true,
     "exactOptionalPropertyTypes": false,
     "useUnknownInCatchVariables": true,
-
     "skipLibCheck": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
-
     "baseUrl": ".",
     "paths": {
-      "@accessly/contracts": ["packages/contracts/src/index.ts"],
-      "@accessly/contracts/*": ["packages/contracts/src/*"],
-      "@accessly/core": ["packages/core/src/index.ts"],
-      "@accessly/core/*": ["packages/core/src/*"]
+      "@accessly/contracts": [
+        "packages/contracts/src/index.ts"
+      ],
+      "@accessly/contracts/*": [
+        "packages/contracts/src/*"
+      ],
+      "@accessly/core": [
+        "packages/core/src/index.ts"
+      ],
+      "@accessly/core/*": [
+        "packages/core/src/*"
+      ],
+      "@accessly/media": [
+        "packages/media/src/index.ts"
+      ],
+      "@accessly/media/*": [
+        "packages/media/src/*"
+      ],
+      "@accessly/tracker": [
+        "packages/tracker/src/index.ts"
+      ],
+      "@accessly/tracker/*": [
+        "packages/tracker/src/*"
+      ]
     }
   }
 }

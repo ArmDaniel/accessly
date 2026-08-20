@@ -9,6 +9,7 @@ import { MonitoringPage } from './pages/MonitoringPage.js';
 import { CoveragePage } from './pages/CoveragePage.js';
 import { DashboardPage } from './pages/DashboardPage.js';
 import { MonitoringDashboardPage } from './pages/MonitoringDashboardPage.js';
+import { JourneysPage } from './pages/JourneysPage.js';
 import { AuditDetailPage } from './pages/AuditDetailPage.js';
 import { StandardsPage } from './pages/StandardsPage.js';
 import { AccessibilityStatementPage } from './pages/AccessibilityStatementPage.js';
@@ -46,6 +47,7 @@ export function App(): React.JSX.Element {
             {/* The client-facing application. */}
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/dashboard/monitoring" element={<MonitoringDashboardPage />} />
+            <Route path="/dashboard/journeys" element={<JourneysPage />} />
             <Route path="/dashboard/audits/:id" element={<AuditDetailPage />} />
 
             <Route path="*" element={<NotFoundPage />} />

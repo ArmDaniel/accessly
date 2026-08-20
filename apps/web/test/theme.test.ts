@@ -74,6 +74,8 @@ describe('light theme text contrast', () => {
     ['--a-brand', '--a-surface-sunken', 4.5, 'link text on a sunken section'],
     ['--a-brand-strong', '--a-surface', 4.5, 'hovered link text'],
     ['--a-brand-strong', '--a-brand-tint', 4.5, 'text on the brand tint'],
+    ['--a-ink', '--a-brand-tint', 4.5, 'the player’s current frame, which inherits ink'],
+    ['--a-ink-muted', '--a-brand-tint', 4.5, 'the player’s current frame timestamp'],
     ['--a-success', '--a-surface', 4.5, 'success text'],
     ['--a-success', '--a-success-tint', 4.5, 'success text on its own tint'],
     ['--a-danger', '--a-surface', 4.5, 'error text'],
@@ -129,6 +131,10 @@ describe('dark theme contrast', () => {
     ['--a-danger', '--a-surface', 4.5],
     ['--a-warning', '--a-surface', 4.5],
     ['--a-accent-strong', '--a-surface', 4.5],
+    // The journey player highlights its current frame with the brand tint and
+    // lets the text inherit. That pair has to hold in both themes.
+    ['--a-ink', '--a-brand-tint', 4.5],
+    ['--a-ink-muted', '--a-brand-tint', 4.5],
   ];
 
   it.each(pairs)('%s on %s reaches %d:1', (fg, bg, minimum) => {
