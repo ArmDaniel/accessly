@@ -1,11 +1,19 @@
 import { useRef, useState } from 'react';
-import type { AuditReport, ConformanceLevel } from '@accessly/contracts';
+import {
+  ACCEPTED_EXTENSIONS,
+  MEDIA_LABELS,
+  type AuditReport,
+  type ConformanceLevel,
+} from '@accessly/contracts';
 import { Page } from '../components/Page.js';
 import { Callout, Field, Icon, icons } from '../components/primitives.js';
 import { ReportView } from '../components/ReportView.js';
-import { ApiError, api } from '../lib/api.js';
+import { ApiError, api, toBase64 } from '../lib/api.js';
 
-type Source = 'url' | 'inline';
+type Source = 'url' | 'inline' | 'media';
+
+/** 5 MB, matching the API's ceiling — caught here so the upload never starts. */
+const MAX_FILE_BYTES = 5_000_000;
 
 /**
  * The scanner.
@@ -27,6 +35,7 @@ export function ScanPage(): React.JSX.Element {
   const [source, setSource] = useState<Source>('url');
   const [url, setUrl] = useState('');
   const [html, setHtml] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [target, setTarget] = useState<ConformanceLevel>('AA');
 
   const [isRunning, setIsRunning] = useState(false);
@@ -58,13 +67,34 @@ export function ScanPage(): React.JSX.Element {
       fail('Paste the HTML you want to scan.', 'Paste some HTML.');
       return;
     }
+    if (source === 'media' && !file) {
+      fail('Choose the document you want to scan.', 'Choose a file.');
+      return;
+    }
+    if (source === 'media' && file && file.size > MAX_FILE_BYTES) {
+      // Checked before reading it: there is no point encoding five megabytes
+      // only for the API to refuse them.
+      fail(
+        `${file.name} is ${Math.round(file.size / 1_000_000)} MB. The limit is 5 MB.`,
+        'That file is too large.',
+      );
+      return;
+    }
 
     setIsRunning(true);
     try {
       const result = await api.createAudit(
         source === 'url'
           ? { source: 'url', url: url.trim(), target, siteId: null }
-          : { source: 'inline', html, target, siteId: null },
+          : source === 'inline'
+            ? { source: 'inline', html, target, siteId: null }
+            : {
+                source: 'media',
+                filename: (file as File).name,
+                data: await toBase64(await (file as File).arrayBuffer()),
+                target,
+                siteId: null,
+              },
       );
       setReport(result);
       window.setTimeout(() => resultRef.current?.focus(), 0);
@@ -76,7 +106,9 @@ export function ScanPage(): React.JSX.Element {
         const field =
           source === 'url'
             ? (error.fieldErrors('url')[0] ?? null)
-            : (error.fieldErrors('html')[0] ?? null);
+            : source === 'inline'
+              ? (error.fieldErrors('html')[0] ?? null)
+              : (error.fieldErrors('filename')[0] ?? error.fieldErrors('data')[0] ?? null);
         fail(error.detail ? `${error.problem.title} ${error.detail}` : error.problem.title, field);
       } else {
         fail('The scan could not be completed. Please try again.');
@@ -149,6 +181,20 @@ export function ScanPage(): React.JSX.Element {
                   />
                   HTML I paste in
                 </label>
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="source"
+                    value="media"
+                    checked={source === 'media'}
+                    onChange={() => {
+                      setSource('media');
+                      setFormError(null);
+                      setFieldError(null);
+                    }}
+                  />
+                  A document or media file
+                </label>
               </div>
             </fieldset>
 
@@ -172,6 +218,29 @@ export function ScanPage(): React.JSX.Element {
                     placeholder="https://example.eu/checkout"
                     value={url}
                     onChange={(event) => setUrl(event.target.value)}
+                  />
+                )}
+              </Field>
+            ) : source === 'media' ? (
+              <Field
+                label="Document"
+                hint={`PDF, Word, PowerPoint, Excel, EPUB or a caption file (WebVTT, SRT). Up to 5 MB. We read its structure — headings, alt text, tables, reading order — and never its contents beyond that.`}
+                error={fieldError}
+                required
+              >
+                {(props) => (
+                  <input
+                    {...props}
+                    className="input"
+                    type="file"
+                    name="file"
+                    // A hint, not a gate: the API sniffs the bytes, because an
+                    // extension is the least reliable thing about a file.
+                    accept={ACCEPTED_EXTENSIONS.join(',')}
+                    onChange={(event) => {
+                      setFile(event.target.files?.[0] ?? null);
+                      setFieldError(null);
+                    }}
                   />
                 )}
               </Field>
@@ -253,7 +322,10 @@ export function ScanPage(): React.JSX.Element {
               style={{ justifyContent: 'space-between', marginBottom: 'var(--a-space-5)' }}
             >
               <h2 ref={resultRef} tabIndex={-1} style={{ margin: 0 }}>
-                Report for {report.subject.title ?? report.subject.url}
+                Report for {report.subject.filename ?? report.subject.title ?? report.subject.url}
+                {report.subject.mediaKind && report.subject.mediaKind !== 'html' ? (
+                  <span className="muted"> — {MEDIA_LABELS[report.subject.mediaKind]}</span>
+                ) : null}
               </h2>
               <button type="button" className="btn btn--secondary" onClick={() => window.print()}>
                 <Icon path={icons.document} size={18} />

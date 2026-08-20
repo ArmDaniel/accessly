@@ -1,5 +1,8 @@
 import type {
   AuditReport,
+  Journey,
+  JourneyReport,
+  JourneyTrace,
   Organisation,
   Site,
   Watch,
@@ -71,10 +74,42 @@ export interface WatchEventRepository {
   listByWatch(watchId: string, limit: number): Promise<readonly WatchEvent[]>;
 }
 
+export interface JourneyRepository {
+  create(journey: Journey): Promise<Journey>;
+  update(id: string, patch: Partial<Journey>): Promise<Journey | null>;
+  findById(id: string): Promise<Journey | null>;
+  listByOrganisation(organisationId: string): Promise<readonly Journey[]>;
+  delete(id: string): Promise<boolean>;
+}
+
+/**
+ * Raw traces, kept alongside the reports derived from them.
+ *
+ * The trace is the evidence: a report can be regenerated when a rule improves,
+ * but only if the messages that produced it are still there. They are small —
+ * no pixels, no DOM — so keeping them is cheap.
+ */
+export interface TraceRepository {
+  save(trace: JourneyTrace): Promise<JourneyTrace>;
+  findById(id: string, organisationId: string): Promise<JourneyTrace | null>;
+}
+
+export interface JourneyReportRepository {
+  save(report: JourneyReport): Promise<JourneyReport>;
+  findById(id: string): Promise<JourneyReport | null>;
+  /** Newest first. */
+  list(
+    query: PageQuery & { organisationId: string; journeyId?: string | undefined },
+  ): Promise<Page<JourneyReport>>;
+}
+
 export interface Repositories {
   readonly organisations: OrganisationRepository;
   readonly sites: SiteRepository;
   readonly audits: AuditRepository;
   readonly watches: WatchRepository;
   readonly watchEvents: WatchEventRepository;
+  readonly journeys: JourneyRepository;
+  readonly traces: TraceRepository;
+  readonly journeyReports: JourneyReportRepository;
 }

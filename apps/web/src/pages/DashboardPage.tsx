@@ -119,6 +119,12 @@ export function DashboardPage(): React.JSX.Element {
               <StatCard value={failing} label="Pages below 70" />
               <StatCard value={watchList.length} label="Monitored pages" />
             </ul>
+
+            <p className="cluster" style={{ marginTop: 'var(--a-space-4)' }}>
+              <Link to="/dashboard/monitoring">Monitoring and regressions</Link>
+              <Link to="/dashboard/journeys">Recorded sessions</Link>
+              <Link to="/scan">Scan a document</Link>
+            </p>
           </section>
 
           {/* ── Sites ──────────────────────────────────────────────────── */}

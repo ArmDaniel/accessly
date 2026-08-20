@@ -7,6 +7,7 @@ import { createContainer, type Container, type ContainerOverrides } from './cont
 import { registerErrorHandler } from './http/error-handler.js';
 import { problem } from './http/problem.js';
 import { registerAuditRoutes } from './routes/audits.routes.js';
+import { registerJourneyRoutes } from './routes/journeys.routes.js';
 import { registerMetaRoutes } from './routes/meta.routes.js';
 import { registerSiteRoutes } from './routes/sites.routes.js';
 import { registerWatchRoutes } from './routes/watches.routes.js';
@@ -71,6 +72,7 @@ export async function buildServer(
   registerAuditRoutes(app, container);
   registerSiteRoutes(app, container);
   registerWatchRoutes(app, container);
+  registerJourneyRoutes(app, container);
 
   app.get('/', async (_request, reply) =>
     problem(

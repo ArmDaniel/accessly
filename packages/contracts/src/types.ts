@@ -1,4 +1,5 @@
 import type { ConformanceLevel, CriterionId, PrincipleId } from './wcag.js';
+import type { MediaKind } from './media.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Findings
@@ -128,8 +129,15 @@ export type AuditStatus = (typeof AUDIT_STATUSES)[number];
 
 /** What was audited and how it was obtained. */
 export interface AuditSubject {
-  /** Canonical URL, or a synthetic `inline:` URI for pasted markup. */
+  /** Canonical URL, or a synthetic `inline:` / `file:` URI for supplied bytes. */
   readonly url: string;
+  /**
+   * What was audited. Drives which rules were in scope and which standards the
+   * report cites — a PDF is judged against PDF/UA as well as WCAG.
+   */
+  readonly mediaKind: MediaKind;
+  /** Original filename, when the subject was uploaded rather than fetched. */
+  readonly filename?: string | null;
   readonly title: string | null;
   /** Language declared on the root element, if any. */
   readonly lang: string | null;

@@ -45,6 +45,7 @@ const ROUTES = [
   '/accessibility',
   '/dashboard',
   '/dashboard/monitoring',
+  '/dashboard/journeys',
   '/not-a-real-page',
 ] as const;
 

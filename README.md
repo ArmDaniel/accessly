@@ -6,6 +6,12 @@ Accessly audits a page, reports every failure with the success criterion it
 breaks and how to fix it, and then keeps watching — re-checking on a schedule
 and telling you which deploy introduced a regression.
 
+It does the same for the **documents** you publish — PDFs, Word files, decks,
+spreadsheets, EPUBs, caption tracks — and for **recorded sessions**, which
+answer the questions markup cannot: where focus went when the dialog closed,
+whether the route change was announced, whether anything told the user their
+form submitted.
+
 ---
 
 ## Getting started
@@ -43,7 +49,11 @@ packages/
   contracts/   The shared vocabulary: the WCAG 2.1 catalogue, domain types,
                and the zod schemas the API and web app both speak.
   core/        The rule engine. Pure, dependency-light, and runnable anywhere:
-               HTML in, scored report out.
+               HTML or an accessibility tree in, scored report out. Also holds
+               the format-neutral tree and the journey analyser.
+  media/       Format adapters: PDF, Word, PowerPoint, Excel, EPUB, captions.
+               Bytes in, accessibility tree out.
+  tracker/     The browser tracker customers embed to record a session.
 apps/
   api/         HTTP API, layered routes → services → repositories, plus the
                monitoring watcher.
@@ -58,15 +68,20 @@ The client-facing application lives under `/dashboard`:
 | `/dashboard` | Any client — registered pages, scores, scan and remove, recent audits. |
 | `/dashboard/monitoring` | Subscribed clients — watch status, forced checks, frequency, and the event timeline. |
 | `/dashboard/audits/:id` | One report, led by its diff against the previous audit. |
+| `/dashboard/journeys` | Recorded sessions, replayed as a transcript with the defects anchored to the moment they happened. |
 
 The dependency direction is one-way and enforced by the workspace boundary:
 
 ```
-web  ─┐
-      ├─→ contracts ←─ core
-api  ─┘                  ↑
-      └──────────────────┘
+web     ─┐
+         ├─→ contracts ←─ core ←─ media
+api     ─┘                ↑        ↑
+         └────────────────┴────────┘
+tracker ─→ contracts
 ```
+
+The tracker depends on contracts alone. It ships to a customer's page, so it
+carries the message protocol and nothing else.
 
 `web` cannot import anything from `api`. It only knows the contracts. Swapping
 the in-memory repositories for Postgres is a change to
@@ -178,6 +193,74 @@ backlogged audits firing at once.
 
 ---
 
+## Documents
+
+A PDF and a web page are the same problem wearing different clothes: something
+has a structure, and assistive technology either can follow it or cannot. So
+every format is parsed into one **accessibility tree** — nodes with a role, a
+name, a level, a locator — and a single set of rules runs over it.
+
+| Format | What we read |
+| --- | --- |
+| Word (`.docx`) | Real headings (`w:pStyle`, not big text), list structure, image alt from `wp:docPr descr`, header rows, language. |
+| PowerPoint (`.pptx`) | Slide titles from the title placeholder, picture alt, charts and tables. |
+| Excel (`.xlsx`) | Header rows declared as tables or autofilters, default sheet names. |
+| EPUB | The spine, each chapter through the HTML path, and the `schema:accessibility*` metadata. |
+| PDF | Tagging (`/MarkInfo`, `/StructTreeRoot`), language, title, `DisplayDocTitle`, figure alt. |
+| Captions (`.vtt`, `.srt`) | Reading rate, cue duration, overlap, speaker identification. |
+
+The format is decided by **sniffing the bytes**, not the extension. Where a
+file cannot be read — object streams in a PDF, an encrypted document, a
+truncated archive — the tree records an *unknown* and the affected rules report
+`cantTell`. That mechanism is only for the unreadable: a Word file whose
+properties are perfectly legible and simply declare no language is a real
+failure, and calling it undecidable would blunt the distinction everywhere.
+
+---
+
+## Journeys
+
+Some criteria are not properties of markup at all. 2.4.3 Focus Order is a
+property of what happens when you press Tab. 4.1.3 Status Messages is a
+property of what was said after you pressed the button. A static checker can
+only ever return `cantTell` for those — which is exactly what ours does, and
+exactly the gap journeys close.
+
+The tracker (`packages/tracker`) is embedded on a page and records a flat
+stream of numerically-typed messages: focus moves and their cause, live-region
+announcements and their politeness, dialogs opening and closing, route changes,
+navigation keys. The shape is adapted from OpenReplay's session replay — a node
+mirror, appendable messages, batched delivery — because that design is proven
+for recording cheaply on the page being recorded.
+
+What is *not* recorded is the point of the adaptation. There is no DOM
+snapshot, no stylesheet, no screenshot, and no input value — only that a field
+was edited. A pixel replay of a checkout is a data-protection liability; a
+transcript of focus and announcements is not, and it is the part you cannot
+reconstruct from a video anyway.
+
+A **journey** is the declarative half — the flow you want monitored, written by
+the accessibility specialist rather than by whoever owns the test suite:
+
+```ts
+{
+  id: 'close-dialog',
+  label: 'Close the confirmation dialog',
+  action: 'press',
+  expect: { announces: 'cancelled', keyboardOnly: true },
+}
+```
+
+Every recording is checked against those expectations and against the journey
+rules, and the result is a report with the same shape as a page audit — except
+its body is a timeline, because these defects happen at moments rather than at
+elements. The player at `/dashboard/journeys` walks that timeline: play, step,
+scrub, jump to the next issue. It is a transcript rather than a video, which
+means the person most affected by a focus-order bug can read the evidence for
+it.
+
+---
+
 ## API
 
 | Method | Path | Purpose |
@@ -185,13 +268,23 @@ backlogged audits firing at once.
 | `GET` | `/health` | Status, engine version, rule count. |
 | `GET` | `/v1/wcag/criteria` | The full WCAG 2.1 catalogue. |
 | `GET` | `/v1/rules` | Rule catalogue **and** published coverage gaps. |
-| `POST` | `/v1/audits` | Audit a URL or pasted HTML. |
+| `POST` | `/v1/audits` | Audit a URL, pasted HTML, or an uploaded document. |
 | `GET` | `/v1/audits/:id` | Retrieve a report. |
 | `GET` | `/v1/audits/:id/diff` | What changed since the previous audit. |
 | `GET/POST/PATCH/DELETE` | `/v1/sites` | Registered pages. |
 | `GET/POST/PATCH/DELETE` | `/v1/watches` | Monitoring subscriptions. |
 | `GET` | `/v1/watches/:id/events` | The monitoring timeline. |
 | `POST` | `/v1/watches/:id/poll` | Force a check now — use this from CI. |
+| `GET/POST/PATCH/DELETE` | `/v1/journeys` | Journey definitions — the flows you want monitored. |
+| `POST` | `/v1/traces` | Ingest a recorded session; answers with its report. |
+| `GET` | `/v1/journey-reports/:id` | One session report, with its timeline. |
+| `GET` | `/v1/traces/:id` | The raw messages behind a report — the evidence. |
+
+`POST /v1/traces` is the one endpoint posted to by a script running on
+somebody else's page, so its tenancy comes from the request context and never
+from the body — otherwise any page could post into any tenant. Trace ids are
+chosen by the browser and therefore guessable, so reads of a trace are scoped
+at the lookup rather than checked afterwards.
 
 Every route that reads or writes a resource is scoped to the calling
 organisation (the `x-accessly-organisation` header); a resource belonging to
@@ -266,7 +359,7 @@ exceptions we know about.
 ## Tests
 
 ```
-445 tests across 13 files
+622 tests across 19 files
 ```
 
 | Suite | What it guards |
@@ -284,6 +377,12 @@ exceptions we know about.
 | `web/test/pages` | Our own markup, audited by our own engine, plus behaviour. |
 | `web/test/dashboard` | Dashboard behaviour, live regions, confirmation flows. |
 | `web/test/theme` | Design token contrast, type scale, motion, forced colours. |
+| `core/test/journey` | Trace reconstruction, the journey rules, and declared step expectations. |
+| `media/test/adapters` | Format detection and every adapter — including that no HTML-only rule ever runs against a document. |
+| `tracker/test/tracker` | The tracker in jsdom, including that it never records what someone typed. |
+| `api/test/journeys` | Journey CRUD and trace ingestion, with the tenancy of a browser-supplied id. |
+| `api/test/media-audits` | Uploaded documents end to end, including refusals that say why. |
+| `web/test/journeys` | The player: keyboard operation, `aria-current`, and staying silent during playback. |
 
 The strongest single guarantee is in `core/test/rules`: a correctly authored
 page must produce **zero** confirmed failures. A rule that fires on good markup
@@ -335,3 +434,13 @@ one that does not:
   and that is the point at which `POST /v1/audits` becomes `202 Accepted`.
 - **No JavaScript execution.** Accessly analyses the markup as served. For
   pages that only exist after hydration, post the rendered HTML.
+- **No media decoding.** Video and audio containers are not opened. Submit the
+  caption or description track alongside, or audit the page that embeds the
+  player — the report says so rather than guessing.
+- **No PDF text extraction.** The PDF adapter reads structure only: tagging,
+  language, title, figure alt text. Where object streams or encryption hide
+  that, it reports `cantTell` rather than assuming the document is untagged.
+- **No pixel replay.** A journey trace holds no DOM snapshot and no
+  screenshots, by design. The player renders a transcript of focus and
+  announcements, which is the thing you cannot reconstruct from a video — and
+  is what makes a recording of a checkout safe to keep.
