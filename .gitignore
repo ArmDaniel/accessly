@@ -17,3 +17,6 @@ self-audit.json
 
 # Git worktrees checked out inside the repo
 worktrees/
+
+# Generated tracker bundle (rebuilt by `npm run build:tracker`)
+packages/tracker/dist/

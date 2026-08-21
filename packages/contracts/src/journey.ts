@@ -116,6 +116,16 @@ export interface JourneyTrace {
   readonly url: string;
   readonly messages: readonly TraceMessage[];
   /**
+   * True when the tracker stopped recording before the session ended, because
+   * the message budget ran out.
+   *
+   * Carried rather than inferred, because "the session ended here" and "we
+   * stopped listening here" produce identical-looking traces and completely
+   * different verdicts. A rule that sees a truncated trace must not report
+   * "nothing was ever announced" — it has no idea.
+   */
+  readonly truncated?: boolean;
+  /**
    * Coarse client description. Deliberately not a full user-agent string: we
    * want "did this work with a keyboard" not "who is this person".
    */
@@ -225,6 +235,8 @@ export interface JourneyReportSummary {
   /** Times focus ended up nowhere — the defect users notice most. */
   readonly focusLosses: number;
   readonly keyboardOnly: boolean;
+  /** The recording stopped early; absence of evidence proves nothing here. */
+  readonly truncated: boolean;
 }
 
 export interface JourneyReport {

@@ -8,9 +8,24 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
-    }
+    },
+    "./embed": {
+      "types": "./src/embed.ts",
+      "default": "./src/embed.ts"
+    },
+    "./dist/*": "./dist/*"
   },
   "dependencies": {
     "@accessly/contracts": "*"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.2"
   }
 }

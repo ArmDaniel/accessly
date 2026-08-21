@@ -51,16 +51,21 @@ export function analyseJourney(options: AnalyseOptions): JourneyReport {
     organisationId: options.trace.organisationId,
     name: options.journey?.name ?? `Session on ${options.trace.url}`,
     startedAt: options.trace.startedAt,
-    summary: summarise(session, findings),
+    summary: summarise(session, findings, options.trace.truncated === true),
     timeline,
     findings,
     steps: options.journey ? checkSteps(options.journey, session) : [],
   };
 }
 
-function summarise(session: Session, findings: readonly JourneyFinding[]): JourneyReport['summary'] {
+function summarise(
+  session: Session,
+  findings: readonly JourneyFinding[],
+  truncated: boolean,
+): JourneyReport['summary'] {
   void findings;
   return {
+    truncated,
     frames: session.frames.length,
     durationMs: session.durationMs,
     announcements: session.frames.filter((frame) => frame.kind === 'announced').length,

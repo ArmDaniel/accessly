@@ -146,6 +146,19 @@ export function JourneyPlayer({ report }: { report: JourneyReport }): React.JSX.
         </div>
       </div>
 
+      {report.summary.truncated ? (
+        /*
+         * Said out loud, because every "nothing was announced" finding below is
+         * only trustworthy for the part of the session we actually saw.
+         */
+        <Callout tone="warning" title="This recording is incomplete">
+          <p className="mb-0">
+            The tracker reached its message limit before the session ended, so anything after this
+            point was not recorded. Treat “nothing happened” findings with care.
+          </p>
+        </Callout>
+      ) : null}
+
       {/* ── Transport ───────────────────────────────────────────────────── */}
       <div className="player__controls cluster" role="group" aria-label="Replay controls">
         <button
