@@ -68,7 +68,7 @@ The client-facing application lives under `/dashboard`:
 | `/dashboard` | Any client — registered pages, scores, scan and remove, recent audits. |
 | `/dashboard/monitoring` | Subscribed clients — watch status, forced checks, frequency, and the event timeline. |
 | `/dashboard/audits/:id` | One report, led by its diff against the previous audit. |
-| `/dashboard/journeys` | Recorded sessions, replayed as a transcript with the defects anchored to the moment they happened. |
+| `/dashboard/journeys` | Define the flows you monitor, and replay recorded sessions as a transcript with the defects anchored to the moment they happened. |
 
 The dependency direction is one-way and enforced by the workspace boundary:
 
@@ -255,7 +255,8 @@ transcript of focus and announcements is not, and it is the part you cannot
 reconstruct from a video anyway.
 
 A **journey** is the declarative half — the flow you want monitored, written by
-the accessibility specialist rather than by whoever owns the test suite:
+the accessibility specialist rather than by whoever owns the test suite. Define
+one at `/dashboard/journeys`, or post it to `/v1/journeys`:
 
 ```ts
 {
@@ -398,6 +399,7 @@ exceptions we know about.
 | `api/test/journeys` | Journey CRUD and trace ingestion, with the tenancy of a browser-supplied id. |
 | `api/test/media-audits` | Uploaded documents end to end, including refusals that say why. |
 | `web/test/journeys` | The player: keyboard operation, `aria-current`, and staying silent during playback. |
+| `web/test/journey-authoring` | The step builder: focus management on add and remove, and what the form actually posts. |
 
 The strongest single guarantee is in `core/test/rules`: a correctly authored
 page must produce **zero** confirmed failures. A rule that fires on good markup
