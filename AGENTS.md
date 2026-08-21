@@ -47,6 +47,8 @@ packages/
               format; the only package that unzips or sniffs anything.
   tracker/    The browser tracker customers embed. Records focus, live-region
               announcements, dialogs and navigation — never input values.
+              `src/index.ts` is the library, `src/embed.ts` the script-tag
+              lifecycle, `build.mjs` the bundle a customer installs.
 apps/
   api/        Fastify HTTP API. routes → services → repositories, plus the
               monitoring watcher loop.
@@ -79,6 +81,7 @@ swapping storage or the fetcher means changing that one file.
 | `npm test` | Full Vitest suite (all packages). |
 | `npm run test:watch` | Vitest in watch mode. |
 | `npm run typecheck` | `tsc -b` across the workspace. This is also the linter. |
+| `npm run build:tracker` | Builds the distributable tracker bundle. Fails if it exceeds its 16 kB budget. |
 | `npm run audit:self` | Renders all 15 web routes server-side and runs our own engine over them. Exits non-zero on any confirmed level A/AA failure. |
 | `npm run build` | Production build of the web app. |
 | `npm run verify` | typecheck + test + audit:self. Run this before declaring done. |
@@ -159,7 +162,11 @@ else may import a concrete repository.
    posted to by a script on somebody else's page. The organisation comes from
    the request context, never from the body, and the report id is issued
    server-side so a replayed POST cannot overwrite an existing report.
-9. **The tracker records no content.** Focus, announcements, dialogs, routes
+9. **A truncated recording says so.** The tracker sets `truncated` when its
+   message budget runs out. "The session ended" and "we stopped listening"
+   produce identical traces and opposite verdicts, so nothing may report an
+   absence as a finding without checking it.
+10. **The tracker records no content.** Focus, announcements, dialogs, routes
    and navigation keys only — never input values, never the DOM. A replay of a
    checkout must stay a transcript, not a data-protection liability.
 
@@ -179,6 +186,7 @@ else may import a concrete repository.
 | `packages/core/test/journey` | Trace reconstruction, journey rules, step expectations. |
 | `packages/media/test/adapters` | Format detection and every adapter, incl. “no HTML-only rule ever runs against a document”. |
 | `packages/tracker/test/tracker` | The tracker in jsdom, incl. that it never records a value. |
+| `packages/tracker/test/{embed,bundle}` | Script-tag config, lifecycle delivery, and the built artefact evaluated in jsdom. |
 | `apps/api/test/journeys` | Journey CRUD, trace ingestion, **tenancy of a browser-supplied id**. |
 | `apps/api/test/media-audits` | Uploaded documents end to end, incl. refusals with a reason. |
 | `apps/web/test/journeys` | The player: keyboard operation, `aria-current`, and silence during playback. |

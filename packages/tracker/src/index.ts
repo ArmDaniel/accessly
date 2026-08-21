@@ -1,10 +1,19 @@
+/*
+ * Imported from the `journey` module rather than the package root on purpose.
+ *
+ * The contracts index also exports the zod request schemas, and this file is
+ * bundled and shipped to a customer's page. Reaching through the root pulls zod
+ * into that bundle for the sake of three constants — a hundredfold increase in
+ * what every visitor downloads, in a script whose whole argument is that it is
+ * cheap to run.
+ */
 import {
   TRACE_PROTOCOL_VERSION,
   TraceMessageType,
   type FocusCause,
   type JourneyTrace,
   type TraceMessage,
-} from '@accessly/contracts';
+} from '@accessly/contracts/journey.js';
 
 /**
  * The Accessly tracker.
@@ -136,6 +145,8 @@ export class Tracker {
   #lastInteraction: FocusCause = 'script';
   /** True between losing focus and regaining it, so one loss is recorded once. */
   #focusIsLost = false;
+  /** Set once the message budget runs out. Travels with the trace. */
+  #truncated = false;
   #cleanup: Array<() => void> = [];
 
   constructor(options: TrackerOptions = {}) {
@@ -160,7 +171,13 @@ export class Tracker {
 
   #push(message: Omit<TraceMessage, 'o'>): void {
     if (!this.#recording) return;
-    if (this.#messages.length >= this.#options.maxMessages) return;
+    if (this.#messages.length >= this.#options.maxMessages) {
+      // Recorded, not silently swallowed: a trace that stopped early and a
+      // session that ended early look identical, and the analyser has to be
+      // able to tell them apart before it concludes "nothing was announced".
+      this.#truncated = true;
+      return;
+    }
     this.#messages.push({ ...message, o: this.#offset() } as TraceMessage);
   }
 
@@ -443,6 +460,7 @@ export class Tracker {
       durationMs: this.#offset(),
       url: this.#messages.find((message) => message.t === TraceMessageType.SessionStart)?.v ?? '',
       messages: [...this.#messages],
+      ...(this.#truncated ? { truncated: true } : {}),
       client: {
         viewportWidth: view?.innerWidth ?? 0,
         viewportHeight: view?.innerHeight ?? 0,
@@ -452,6 +470,18 @@ export class Tracker {
     };
   }
 
+  /**
+   * Send the trace.
+   *
+   * `keepalive` is what makes this work at the only moment that matters: the
+   * page going away. An ordinary fetch started during unload is cancelled with
+   * the document, so without it the last — and usually most interesting — part
+   * of a session is simply never delivered.
+   *
+   * The 64 KB keepalive budget is why `maxMessages` is what it is. A trace that
+   * outgrew it would be rejected by the browser rather than truncated, so the
+   * cap is enforced at the recording end where we can at least say it happened.
+   */
   async flush(): Promise<JourneyTrace> {
     const trace = this.build();
 
@@ -460,13 +490,28 @@ export class Tracker {
       return trace;
     }
 
-    if (this.#options.endpoint && typeof fetch === 'function') {
-      await fetch(this.#options.endpoint, {
+    const endpoint = this.#options.endpoint;
+    if (!endpoint || typeof fetch !== 'function') return trace;
+
+    try {
+      await fetch(endpoint, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(this.#options.organisationId
+            ? { 'x-accessly-organisation': this.#options.organisationId }
+            : {}),
+        },
         body: JSON.stringify(trace),
         keepalive: true,
       });
+    } catch {
+      /*
+       * A failed delivery must never surface on the customer's page. We are a
+       * passive observer; throwing here would turn "our endpoint was briefly
+       * unreachable" into an unhandled rejection in somebody else's console,
+       * and eventually into their error budget.
+       */
     }
 
     return trace;
