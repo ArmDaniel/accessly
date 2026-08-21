@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Accessly tracker — demo harness</title>
+
+    <!--
+      The tracker, installed exactly as a customer would install it.
+
+      No endpoint is set, so nothing is posted: the trace stays in the page and
+      the buttons below dump it. Add data-endpoint to send it somewhere real.
+    -->
+    <script src="../dist/accessly-tracker.js" data-accessly defer></script>
+
+    <style>
+      body { font: 16px/1.6 system-ui, sans-serif; max-width: 46rem; margin: 2rem auto; padding: 0 1rem; }
+      button { font: inherit; padding: 0.4rem 0.8rem; }
+      pre { background: #f4f4f4; padding: 1rem; overflow: auto; max-height: 22rem; }
+      dialog { padding: 1.5rem; }
+      .row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0; }
+    </style>
+  </head>
+
+  <body>
+    <h1>Accessly tracker demo</h1>
+    <p>
+      Interact with the controls below, then dump the trace. Everything here exists to produce
+      one of the situations the journey rules look for.
+    </p>
+
+    <h2>Things that should pass</h2>
+    <div class="row">
+      <button type="button" id="announce">Announce something politely</button>
+      <button type="button" id="open-dialog">Open a dialog that takes focus</button>
+    </div>
+
+    <h2>Things that should fail</h2>
+    <div class="row">
+      <!-- Removing a focused control is the classic focus-loss defect. -->
+      <button type="button" id="self-destruct">Remove myself while focused</button>
+      <button type="button" id="silent">Do something silently</button>
+    </div>
+
+    <p role="status" aria-live="polite" id="status"></p>
+
+    <dialog id="dialog" aria-labelledby="dialog-heading">
+      <h2 id="dialog-heading">A dialog</h2>
+      <p>Focus should have moved in here when this opened.</p>
+      <button type="button" id="close-dialog">Close</button>
+    </dialog>
+
+    <h2>The trace</h2>
+    <div class="row">
+      <button type="button" id="dump">Show the trace</button>
+      <button type="button" id="clear">Clear</button>
+    </div>
+    <pre id="out">Interact with something first.</pre>
+
+    <script>
+      addEventListener('DOMContentLoaded', () => {
+        const status = document.getElementById('status');
+        const dialog = document.getElementById('dialog');
+        const out = document.getElementById('out');
+
+        document.getElementById('announce').addEventListener('click', () => {
+          status.textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+        });
+
+        document.getElementById('open-dialog').addEventListener('click', () => {
+          dialog.showModal();
+          document.getElementById('close-dialog').focus();
+        });
+
+        document.getElementById('close-dialog').addEventListener('click', () => {
+          dialog.close();
+          // Returning focus deliberately is the half that is usually missed.
+          document.getElementById('open-dialog').focus();
+        });
+
+        document.getElementById('self-destruct').addEventListener('click', (event) => {
+          event.currentTarget.remove();
+        });
+
+        document.getElementById('silent').addEventListener('click', () => {});
+
+        document.getElementById('dump').addEventListener('click', () => {
+          const trace = window.Accessly.current.tracker.build();
+          out.textContent = JSON.stringify(trace, null, 2);
+        });
+
+        document.getElementById('clear').addEventListener('click', () => {
+          out.textContent = 'Interact with something first.';
+        });
+      });
+    </script>
+  </body>
+</html>

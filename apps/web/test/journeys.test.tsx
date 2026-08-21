@@ -30,6 +30,7 @@ const REPORT: JourneyReport = {
     focusMoves: 1,
     focusLosses: 1,
     keyboardOnly: true,
+    truncated: false,
   },
   timeline: [
     {

@@ -14,13 +14,22 @@ const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
  */
 export default defineConfig({
   resolve: {
-    alias: {
-      '@accessly/contracts': r('./packages/contracts/src/index.ts'),
-      '@accessly/core': r('./packages/core/src/index.ts'),
-      '@accessly/media': r('./packages/media/src/index.ts'),
-      '@accessly/tracker': r('./packages/tracker/src/index.ts'),
-      '@web': r('./apps/web/src'),
-    },
+    /*
+     * An array rather than an object, because order decides correctness here.
+     * A bare `@accessly/contracts` entry also prefix-matches
+     * `@accessly/contracts/journey.js` and would rewrite it to
+     * `…/src/index.tsjourney.js`, so the subpath rule has to be tried first.
+     * Object keys happen to preserve order today; spelling it out means we are
+     * not relying on that.
+     */
+    alias: [
+      { find: /^@accessly\/contracts\/(.*)\.js$/, replacement: r('./packages/contracts/src/$1.ts') },
+      { find: '@accessly/contracts', replacement: r('./packages/contracts/src/index.ts') },
+      { find: '@accessly/core', replacement: r('./packages/core/src/index.ts') },
+      { find: '@accessly/media', replacement: r('./packages/media/src/index.ts') },
+      { find: '@accessly/tracker', replacement: r('./packages/tracker/src/index.ts') },
+      { find: '@web', replacement: r('./apps/web/src') },
+    ],
   },
   test: {
     globals: true,

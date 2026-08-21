@@ -212,6 +212,7 @@ export const ingestTraceSchema = z.object({
   durationMs: z.number().int().min(0),
   url: httpUrlSchema,
   messages: z.array(traceMessageSchema).max(50_000),
+  truncated: z.boolean().optional(),
   client: z.object({
     viewportWidth: z.number().int().min(0).max(20_000),
     viewportHeight: z.number().int().min(0).max(20_000),

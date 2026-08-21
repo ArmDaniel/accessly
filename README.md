@@ -233,6 +233,21 @@ navigation keys. The shape is adapted from OpenReplay's session replay — a nod
 mirror, appendable messages, batched delivery — because that design is proven
 for recording cheaply on the page being recorded.
 
+Installation is one tag:
+
+```html
+<script src="https://cdn.accessly.eu/accessly-tracker.js"
+        data-endpoint="https://api.accessly.eu/v1/traces"
+        data-organisation="00000000-0000-4000-8000-000000000001"
+        defer></script>
+```
+
+It is 8.8 kB minified, sends on `visibilitychange` to hidden (not
+`beforeunload`, which never fires on mobile), and marks a trace `truncated`
+rather than letting a recording that stopped early look like a session that
+ended. See `packages/tracker/README.md`, and `packages/tracker/demo/` for a
+page that produces each defect on demand.
+
 What is *not* recorded is the point of the adaptation. There is no DOM
 snapshot, no stylesheet, no screenshot, and no input value — only that a field
 was edited. A pixel replay of a checkout is a data-protection liability; a

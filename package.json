@@ -16,14 +16,15 @@
     "dev": "npm-run-all --parallel dev:api dev:web",
     "dev:api": "npm run dev -w @accessly/api",
     "dev:web": "npm run dev -w @accessly/web",
-    "build": "npm run build -w @accessly/web",
+    "build": "npm run build:tracker && npm run build -w @accessly/web",
     "typecheck": "tsc -b --pretty",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "tsc -b --pretty",
     "audit:self": "npm run audit:self -w @accessly/web",
-    "verify": "npm run typecheck && npm test && npm run audit:self"
+    "verify": "npm run typecheck && npm test && npm run audit:self",
+    "build:tracker": "npm run build -w @accessly/tracker"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
