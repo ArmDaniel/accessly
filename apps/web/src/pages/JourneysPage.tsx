@@ -1,11 +1,18 @@
 import { useRef, useState } from 'react';
-import type { JourneyReport } from '@accessly/contracts';
+import type { Journey, JourneyReport } from '@accessly/contracts';
 import { Page } from '../components/Page.js';
 import { Badge, Callout, ScrollRegion } from '../components/primitives.js';
-import { AsyncSection, StatCard, formatWhen } from '../components/dashboard.js';
+import {
+  ActionStatus,
+  AsyncSection,
+  ConfirmButton,
+  StatCard,
+  formatWhen,
+} from '../components/dashboard.js';
+import { JourneyForm } from '../components/JourneyForm.js';
 import { JourneyPlayer, formatOffset } from '../components/JourneyPlayer.js';
 import { api } from '../lib/api.js';
-import { useAsync } from '../lib/useAsync.js';
+import { useAction, useAsync } from '../lib/useAsync.js';
 
 /**
  * Recorded sessions.
@@ -27,9 +34,28 @@ export function JourneysPage(): React.JSX.Element {
     [selectedId],
   );
 
+  const [isDefining, setIsDefining] = useState(false);
+  const action = useAction();
+
   const playerRef = useRef<HTMLHeadingElement | null>(null);
+  const defineRef = useRef<HTMLButtonElement | null>(null);
+  const formRef = useRef<HTMLDivElement | null>(null);
+
+  const journeyList: readonly Journey[] = journeys.state.data?.items ?? [];
+
+  /** Close the form and put focus back where it came from. */
+  const closeForm = (): void => {
+    setIsDefining(false);
+    window.setTimeout(() => defineRef.current?.focus(), 0);
+  };
 
   const items: readonly JourneyReport[] = reports.state.data?.items ?? [];
+  const reportsByJourney = new Map<string, number>();
+  for (const report of items) {
+    if (!report.journeyId) continue;
+    reportsByJourney.set(report.journeyId, (reportsByJourney.get(report.journeyId) ?? 0) + 1);
+  }
+
   const failures = items.reduce(
     (total, report) => total + report.findings.filter((f) => f.outcome === 'failed').length,
     0,
@@ -45,13 +71,15 @@ export function JourneysPage(): React.JSX.Element {
     >
       <div className="section section--tight">
         <div className="container">
+          <ActionStatus message={action.message} error={action.error} />
+
           <section aria-labelledby="journey-summary">
             <h2 id="journey-summary" className="visually-hidden">
               Session summary
             </h2>
             <ul className="stats">
               <StatCard value={items.length} label="Recorded sessions" />
-              <StatCard value={journeys.state.data?.items.length ?? 0} label="Defined journeys" />
+              <StatCard value={journeyList.length} label="Defined journeys" />
               <StatCard value={failures} label="Confirmed failures" />
               <StatCard value={focusLosses} label="Times focus was lost" />
             </ul>
@@ -65,7 +93,134 @@ export function JourneysPage(): React.JSX.Element {
             </p>
           </Callout>
 
-          <section aria-labelledby="journey-list" style={{ marginTop: 'var(--a-space-6)' }}>
+          <section aria-labelledby="journey-definitions" style={{ marginTop: 'var(--a-space-6)' }}>
+            <div className="cluster" style={{ justifyContent: 'space-between' }}>
+              <h2 id="journey-definitions">Journeys you monitor</h2>
+              {!isDefining ? (
+                <button
+                  type="button"
+                  ref={defineRef}
+                  className="btn btn--sm btn--secondary"
+                  // aria-expanded, because the button reveals the form rather
+                  // than navigating anywhere.
+                  aria-expanded={false}
+                  aria-controls="journey-form-panel"
+                  onClick={() => {
+                    setIsDefining(true);
+                    window.setTimeout(() => formRef.current?.focus(), 0);
+                  }}
+                >
+                  Define a journey
+                </button>
+              ) : null}
+            </div>
+
+            <div id="journey-form-panel" hidden={!isDefining}>
+              {isDefining ? (
+                <div
+                  ref={formRef}
+                  tabIndex={-1}
+                  className="card"
+                  style={{ marginBottom: 'var(--a-space-5)' }}
+                >
+                  <JourneyForm
+                    isBusy={action.isBusy}
+                    onCancel={closeForm}
+                    onSubmit={async (input) => {
+                      await action.run(async () => {
+                        const created = await api.createJourney(input);
+                        journeys.reload();
+                        closeForm();
+                        return `${created.name} was saved, with ${created.steps.length} step(s). Recordings that name it will be checked against it.`;
+                      });
+                    }}
+                  />
+                </div>
+              ) : null}
+            </div>
+
+            <AsyncSection
+              status={journeys.state.status}
+              error={journeys.state.error}
+              label="your journeys"
+              isEmpty={journeyList.length === 0}
+              emptyTitle="No journeys defined yet"
+              emptyBody={
+                <p className="mb-0">
+                  Recordings are always checked against every journey rule. A journey adds your
+                  own expectations on top — “after this step, something must be announced” — so a
+                  regression in a flow you care about is caught by name rather than by eye.
+                </p>
+              }
+            >
+              <ScrollRegion label="Journeys you monitor">
+                <table className="table">
+                  <caption className="visually-hidden">
+                    Journey definitions, with the expectations each one declares.
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Journey</th>
+                      <th scope="col">Starts at</th>
+                      <th scope="col">Steps</th>
+                      <th scope="col">Recordings</th>
+                      <th scope="col">
+                        <span className="visually-hidden">Actions</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {journeyList.map((journey) => {
+                      const asserted = journey.steps.filter((step) => step.expect).length;
+                      return (
+                        <tr key={journey.id}>
+                          <th scope="row">
+                            <strong>{journey.name}</strong>
+                            {journey.description ? (
+                              <>
+                                <br />
+                                <span className="muted" style={{ fontSize: 'var(--a-text-xs)' }}>
+                                  {journey.description}
+                                </span>
+                              </>
+                            ) : null}
+                          </th>
+                          <td style={{ overflowWrap: 'anywhere' }}>{journey.startUrl}</td>
+                          <td>
+                            {journey.steps.length}
+                            {asserted > 0 ? (
+                              <>
+                                {' '}
+                                <Badge tone="info">{asserted} with expectations</Badge>
+                              </>
+                            ) : null}
+                          </td>
+                          <td>{reportsByJourney.get(journey.id) ?? 0}</td>
+                          <td>
+                            <ConfirmButton
+                              label="Delete"
+                              confirmLabel="Yes, delete it"
+                              question={`Delete ${journey.name}? Recordings already made are kept.`}
+                              disabled={action.isBusy}
+                              onConfirm={() =>
+                                void action.run(async () => {
+                                  await api.deleteJourney(journey.id);
+                                  journeys.reload();
+                                  return `${journey.name} was deleted.`;
+                                })
+                              }
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </ScrollRegion>
+            </AsyncSection>
+          </section>
+
+          <section aria-labelledby="journey-list" style={{ marginTop: 'var(--a-space-7)' }}>
             <h2 id="journey-list">Sessions</h2>
 
             <AsyncSection

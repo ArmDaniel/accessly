@@ -182,6 +182,7 @@ else may import a concrete repository.
 | `apps/api/test/journeys` | Journey CRUD, trace ingestion, **tenancy of a browser-supplied id**. |
 | `apps/api/test/media-audits` | Uploaded documents end to end, incl. refusals with a reason. |
 | `apps/web/test/journeys` | The player: keyboard operation, `aria-current`, and silence during playback. |
+| `apps/web/test/journey-authoring` | The step builder: focus on add/remove, id derivation, and the posted payload. |
 
 Test data flows through injected `FixedClock` / `SequentialIdGenerator`
 (`apps/api/test/helpers.ts`), so assertions can name exact timestamps and ids.

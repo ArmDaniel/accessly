@@ -353,6 +353,50 @@ describe('1.3.5 Identify Input Purpose', () => {
     );
   });
 
+  /*
+   * 1.3.5 is about fields collecting information about the *user*. The
+   * identifier match used to be a bare substring test, which reported
+   * `journeyName` as a person's name, `hotel` as a telephone number and
+   * `capacity` as a city — the kind of false positive that teaches a team to
+   * ignore the whole report. Found by auditing our own journey form.
+   */
+  it('does not treat every field whose name ends in "name" as a person', () => {
+    for (const field of ['journeyName', 'productName', 'fileName', 'siteName']) {
+      expectClean(
+        'input-autocomplete',
+        page(`<main><form><label for="n">Name</label><input id="n" name="${field}"></form></main>`),
+      );
+    }
+  });
+
+  it('still flags a name field that is about the user', () => {
+    for (const field of ['name', 'fullname', 'firstName', 'lastName', 'userName']) {
+      expectFires(
+        'input-autocomplete',
+        page(`<main><form><label for="n">Name</label><input id="n" name="${field}"></form></main>`),
+      );
+    }
+  });
+
+  it('matches whole words, not substrings buried in another one', () => {
+    for (const field of ['hotelPreference', 'capacity', 'countryside_photo', 'telemetryOptIn']) {
+      expectClean(
+        'input-autocomplete',
+        page(`<main><form><label for="f">Field</label><input id="f" name="${field}"></form></main>`),
+      );
+    }
+  });
+
+  it('reads camelCase, snake_case and kebab-case alike', () => {
+    for (const field of ['postalCode', 'postal_code', 'postal-code']) {
+      const message = expectFires(
+        'input-autocomplete',
+        page(`<main><form><label for="p">Postcode</label><input id="p" name="${field}"></form></main>`),
+      );
+      expect(message).toMatch(/autocomplete="postal-code"/);
+    }
+  });
+
   it('flags a nonsense token that browsers will discard', () => {
     const message = expectFires(
       'input-autocomplete',
