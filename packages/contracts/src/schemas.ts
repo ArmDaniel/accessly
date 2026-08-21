@@ -140,10 +140,15 @@ export type UpdateWatchInput = z.infer<typeof updateWatchSchema>;
 
 // ── Journeys ─────────────────────────────────────────────────────────────────
 
+/**
+ * Only expectations the analyser can actually settle from a trace. A
+ * selector-based one would be accepted here and then silently pass, which is
+ * the worst of both — see `StepExpectation` in `./journey.js`.
+ */
 export const stepExpectationSchema = z.object({
-  focusWithin: z.string().trim().min(1).max(200).optional(),
   /** `true` means "something must be announced"; a string must be contained in it. */
   announces: z.union([z.literal(true), z.string().trim().min(1).max(200)]).optional(),
+  focusMoves: z.boolean().optional(),
   keyboardOnly: z.boolean().optional(),
   dialogOpen: z.boolean().optional(),
 });

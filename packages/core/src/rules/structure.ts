@@ -26,8 +26,15 @@ import { PASS, SKIP } from './define.js';
 const nodeRule = (rule: Omit<NodeRule, 'kind'>): NodeRule => ({ ...rule, kind: 'node' });
 const treeRule = (rule: Omit<TreeRule, 'kind'>): TreeRule => ({ ...rule, kind: 'tree' });
 
-/** Every format that carries authored document structure. */
-const DOCUMENT_FORMATS: readonly MediaKind[] = ['html', 'pdf', 'docx', 'pptx', 'xlsx', 'epub'];
+/**
+ * Every format that carries authored document structure.
+ *
+ * HTML is deliberately absent. The DOM rules already decide these criteria for
+ * pages, and a tree rule that also ran there would report the same defect twice
+ * under two rule ids — one failure wearing two hats, which inflates the counts
+ * and gives the watcher two "new issues" for one regression.
+ */
+const DOCUMENT_FORMATS: readonly MediaKind[] = ['pdf', 'docx', 'pptx', 'xlsx', 'epub'];
 
 /** Formats where a "page" is really a slide, so the wording should follow. */
 function unitNoun(kind: MediaKind): string {
@@ -52,15 +59,10 @@ const imageHasName = nodeRule({
   media: DOCUMENT_FORMATS,
   role: 'image',
   filter: (candidate) => candidate.props.decorative !== true,
-  evaluate: (candidate, context) => {
-    /*
-     * HTML has its own, more precise rule for this — it can tell alt="" from a
-     * missing attribute, which is the difference between "deliberately
-     * decorative" and "forgotten". Deferring avoids reporting the same defect
-     * twice under two rule ids.
-     */
-    if (context.mediaKind === 'html') return SKIP;
-
+  // HTML is excluded by DOCUMENT_FORMATS: it has its own, more precise rule,
+  // which can tell alt="" from a missing attribute — the difference between
+  // "deliberately decorative" and "forgotten".
+  evaluate: (candidate) => {
     const name = candidate.name?.trim() ?? '';
 
     if (name.length === 0) {
@@ -97,6 +99,50 @@ const imageHasName = nodeRule({
 });
 
 // ── 1.3.1 Info and Relationships ─────────────────────────────────────────────
+
+/**
+ * Tagging is the gate every other PDF check stands behind.
+ *
+ * An untagged PDF has no structure at all: no headings, no reading order, no
+ * table relationships, no alternative text. A screen reader is left guessing at
+ * glyph positions, which is why PDF/UA treats this as the first requirement and
+ * why it must never be absent from a report. The adapter records `tagged` as
+ * `null` rather than `false` when compression or encryption hid the catalogue,
+ * and that distinction is carried through here — "untagged" and "we could not
+ * look" are different verdicts.
+ */
+const pdfIsTagged = nodeRule({
+  id: 'media-pdf-tagged',
+  title: 'The PDF is tagged',
+  help: 'An untagged PDF is a picture of a document. Assistive technology has no headings, no reading order and no table structure to work with, so nothing else about the file can be fixed until this is.',
+  criteria: ['1.3.1'],
+  impact: 'critical',
+  media: ['pdf'],
+  role: 'document',
+  evaluate: (candidate) => {
+    const tagged = candidate.props.tagged;
+
+    if (tagged === true) return PASS;
+
+    if (tagged === false) {
+      return {
+        outcome: 'failed',
+        message:
+          'This PDF is not tagged. It carries no structure tree, so a screen reader cannot identify headings, reading order, tables or images anywhere in the document.',
+        remediation:
+          'Re-export it from the source document with tagging enabled — "Create PDF/A" or "Document structure tags for accessibility" in Word, "Best for electronic distribution and accessibility" in the Acrobat plugin. Tagging an existing PDF by hand in Acrobat is possible but far slower than re-exporting.',
+      };
+    }
+
+    return {
+      outcome: 'cantTell',
+      message:
+        'Whether this PDF is tagged could not be determined — its catalogue is inside a compressed or encrypted stream that Accessly does not open.',
+      remediation:
+        'Check it with Acrobat’s accessibility checker, or supply an uncompressed copy. Do not assume it is tagged: this is the first thing to confirm.',
+    };
+  },
+});
 
 const headingsAreRealHeadings = treeRule({
   id: 'media-has-headings',
@@ -209,6 +255,9 @@ const tableHasHeaders = nodeRule({
   },
 });
 
+/** A bullet or number typed as text at the start of a paragraph. */
+const MANUAL_BULLET = /^\s*([-*•]|\d+[.)])\s+\S/;
+
 const listsAreRealLists = nodeRule({
   id: 'media-list-structure',
   title: 'Lists are marked as lists',
@@ -217,10 +266,26 @@ const listsAreRealLists = nodeRule({
   impact: 'moderate',
   media: ['pdf', 'docx', 'epub'],
   role: 'paragraph',
-  filter: (candidate) => /^\s*([-*•·–—]|\d+[.)])\s+\S/.test(candidate.text ?? ''),
+  /*
+   * Only the characters people actually type as bullets. An em or en dash
+   * opening a sentence — as this one does — is ordinary typography, and
+   * treating it as a manual bullet reported a confirmed failure for correct
+   * prose.
+   */
+  filter: (candidate) => MANUAL_BULLET.test(candidate.text ?? ''),
   evaluate: (candidate, context) => {
     const parent = parentOf(context.tree.root, candidate);
     if (parent && (parent.role === 'list' || parent.role === 'listitem')) return PASS;
+
+    /*
+     * A list has more than one item. One paragraph that happens to open with a
+     * dash or a "1." is a sentence; several in the same document is somebody
+     * typing a list by hand, which is the defect this rule exists to catch.
+     */
+    const alsoMatching = findByRole(context.tree.root, 'paragraph').filter((other) =>
+      MANUAL_BULLET.test(other.text ?? ''),
+    );
+    if (alsoMatching.length < 2) return SKIP;
 
     return {
       outcome: 'failed',
@@ -514,14 +579,30 @@ const chartHasDescription = nodeRule({
     const description = (candidate.description ?? '').trim();
     const name = (candidate.name ?? '').trim();
 
+    const remediation =
+      'Describe the finding, not the format: "Sales fell 12% between Q1 and Q3, with the sharpest drop in July" rather than "bar chart of sales". Put the data in an adjacent table where you can.';
+
     if (description.length > 40) return PASS;
     if (name.length > 40) return PASS;
 
+    if (description.length === 0 && name.length === 0) {
+      return {
+        outcome: 'failed',
+        message: 'This chart has no description at all, so everything it shows is unavailable to anyone who cannot see it.',
+        remediation,
+      };
+    }
+
+    /*
+     * Length cannot decide adequacy. "Sales fell 12% from Q1 to Q3" is 28
+     * characters and says everything the chart does; failing it outright would
+     * be reporting a defect we have not established.
+     */
     return {
-      outcome: 'failed',
-      message: 'This chart has no description of what it shows — only a short name, which cannot convey a trend or a comparison.',
-      remediation:
-        'Describe the finding, not the format: "Sales fell 12% between Q1 and Q3, with the sharpest drop in July" rather than "bar chart of sales". Put the data in an adjacent table where you can.',
+      outcome: 'cantTell',
+      message: `The description of this chart ("${description || name}") is short for something that carries its meaning in its shape. Check that it conveys the trend or comparison rather than just naming the chart.`,
+      remediation,
+      impact: 'moderate',
     };
   },
 });
@@ -534,22 +615,33 @@ const colourOnlyMeaning = nodeRule({
   help: 'A key that says "rows in red need attention" is unusable for a colour-blind reader and invisible to a screen reader.',
   criteria: ['1.4.1'],
   impact: 'moderate',
+  // It can only ever raise the question, never settle it, so it must not count
+  // as coverage of 1.4.1.
+  detection: 'advisory',
   media: ['docx', 'pptx', 'xlsx', 'pdf', 'epub'],
   role: ['paragraph', 'cell', 'caption'],
   filter: (candidate) =>
     /\b(shown|marked|indicated|highlighted|shaded|coloured|colored)\s+in\s+(red|green|blue|amber|orange|yellow|purple)\b|\b(red|green|blue|amber|orange|yellow)\s+(rows?|cells?|items?|entries|text|figures?)\b/i.test(
       candidate.text ?? '',
     ),
-  evaluate: () => ({
-    outcome: 'failed',
-    message: 'This text explains meaning using colour alone, which is unavailable to colour-blind readers and to anyone using a screen reader.',
+  /*
+   * A phrase match cannot settle this. "The red items in the museum collection"
+   * matches the same pattern as "red items need attention", and only one of
+   * them is a defect — deciding which needs the document, not the sentence. So
+   * this raises the question and leaves the answer to a person, the way every
+   * other undecidable check in this file does.
+   */
+  evaluate: (candidate) => ({
+    outcome: 'cantTell',
+    message: `This text refers to colour ("${(candidate.text ?? '').trim().slice(0, 80)}"). If colour is the only thing conveying that meaning, it is unavailable to colour-blind readers and to anyone using a screen reader.`,
     remediation:
-      'Add a second cue that does not depend on colour — a symbol, a word in the cell, or a separate status column — and refer to that instead.',
+      'Check whether a second, non-colour cue is present — a symbol, a word in the cell, or a separate status column. If not, add one and refer to that instead.',
   }),
 });
 
 export const structureRules: readonly Rule[] = [
   imageHasName,
+  pdfIsTagged,
   headingsAreRealHeadings,
   headingOrder,
   tableHasHeaders,

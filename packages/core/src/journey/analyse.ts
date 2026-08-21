@@ -119,7 +119,7 @@ function checkSteps(journey: Journey, session: Session): StepOutcome[] {
       }
     }
 
-    if (expectation.focusWithin !== undefined) {
+    if (expectation.focusMoves === true) {
       const moved = frames.some((frame) => frame.kind === 'focus');
       if (!moved) problems.push('focus never moved');
     }

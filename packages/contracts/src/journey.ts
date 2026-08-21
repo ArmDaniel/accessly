@@ -154,14 +154,24 @@ export interface JourneyStep {
   readonly expect?: StepExpectation;
 }
 
+/**
+ * What must be true after a step.
+ *
+ * Every field here is something the trace can actually settle. A selector-based
+ * expectation ("focus must land inside #dialog") is deliberately absent: the
+ * trace records accessible names and roles, not selectors, so we could only
+ * ever have checked that focus moved *somewhere* — and reported a step as
+ * satisfied while the defect it was written to catch went past. An expectation
+ * we cannot enforce is worse than no expectation, because it looks like cover.
+ */
 export interface StepExpectation {
-  /** Focus must end up inside this selector. */
-  readonly focusWithin?: string;
   /** Something must be announced; optionally matching this text. */
   readonly announces?: string | true;
+  /** Focus must move at least once during the step. */
+  readonly focusMoves?: boolean;
   /** The step must be completable without a pointer. */
   readonly keyboardOnly?: boolean;
-  /** A dialog must be open, and focus must be inside it. */
+  /** A dialog must open during the step. */
   readonly dialogOpen?: boolean;
 }
 

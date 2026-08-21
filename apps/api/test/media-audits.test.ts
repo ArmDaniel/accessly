@@ -120,6 +120,29 @@ describe('POST /v1/audits with a document', () => {
     ).toBe(false);
   });
 
+  it('fails an untagged PDF, which is the defect that matters most', async () => {
+    // Regression: `tagged` was computed by the adapter and read by nothing, so
+    // an untagged PDF — unusable with a screen reader — scored 100/100 and came
+    // back conforming at AAA.
+    const bytes = pdf({ tagged: false, lang: 'en', title: 'A readable guide to things', pages: 3 });
+    const report = (await scan(bytes, 'guide.pdf')).json();
+
+    const finding = report.findings.find((f: { ruleId: string }) => f.ruleId === 'media-pdf-tagged');
+    expect(finding.outcome).toBe('failed');
+    expect(finding.criteria).toContain('1.3.1');
+    expect(report.score.conformsTo).toBeNull();
+    expect(report.score.value).toBeLessThan(100);
+  });
+
+  it('passes a tagged PDF rather than failing everything', async () => {
+    const bytes = pdf({ tagged: true, lang: 'en', title: 'A readable guide to things', pages: 3 });
+    const report = (await scan(bytes, 'guide.pdf')).json();
+
+    expect(
+      report.findings.some((f: { ruleId: string }) => f.ruleId === 'media-pdf-tagged'),
+    ).toBe(false);
+  });
+
   it('audits a caption file against reading rate and cue timing', async () => {
     const bytes = webvtt([
       {
@@ -152,6 +175,21 @@ describe('POST /v1/audits with a document — refusals', () => {
     expect(response.headers['content-type']).toContain('application/problem+json');
     expect(response.json().errors.filename[0]).toBeTruthy();
   });
+
+  it('accepts a file up to the size it advertises', async () => {
+    /*
+     * Regression: base64 inflates by 4/3, but the body limit was sized to the
+     * raw document limit — so a 4 MB file, well under the 5 MB the UI and the
+     * schema message both promise, was rejected with a bare 413 before either
+     * could say anything useful about it.
+     */
+    const bytes = new Uint8Array(4_000_000);
+    bytes.set(new TextEncoder().encode('%PDF-1.7'));
+
+    const response = await scan(bytes, 'big.pdf');
+    expect(response.statusCode).not.toBe(413);
+    expect(response.statusCode).toBe(201);
+  }, 30_000);
 
   it('refuses an empty upload', async () => {
     const response = await harness.app.inject({

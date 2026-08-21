@@ -161,16 +161,36 @@ describe('DOCX adapter', () => {
     const typed = docx({
       title: 'Report',
       language: 'en',
-      paragraphs: [{ text: '- First item typed with a dash' }],
+      paragraphs: [
+        { text: '- First item typed with a dash' },
+        { text: '- Second item typed with a dash' },
+      ],
     });
     expect(ruleIds(typed)).toContain('media-list-structure');
 
     const real = docx({
       title: 'Report',
       language: 'en',
-      paragraphs: [{ text: '- First item typed with a dash', list: true }],
+      paragraphs: [
+        { text: '- First item typed with a dash', list: true },
+        { text: '- Second item typed with a dash', list: true },
+      ],
     });
     expect(ruleIds(real)).not.toContain('media-list-structure');
+  });
+
+  it('leaves a lone dashed paragraph alone — a list has more than one item', () => {
+    // An em dash or a single leading dash is ordinary typography. Reporting it
+    // as a manually typed list failed correct prose.
+    const prose = docx({
+      title: 'Report',
+      language: 'en',
+      paragraphs: [
+        { text: '— As Keynes wrote, the long run is a misleading guide to current affairs.' },
+        { text: '- One aside, set off with a dash.' },
+      ],
+    });
+    expect(ruleIds(prose)).not.toContain('media-list-structure');
   });
 
   it('flags a missing document title and a filename used as one', () => {
@@ -252,7 +272,7 @@ describe('PPTX adapter', () => {
     const deck = pptx({
       title: 'Deck',
       language: 'en',
-      slides: [{ title: 'Results', chart: { alt: 'Chart 1' } }],
+      slides: [{ title: 'Results', chart: { alt: null } }],
     });
     expect(ruleIds(deck)).toContain('media-chart-description');
 

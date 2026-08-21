@@ -249,6 +249,37 @@ describe('tracker — announcements', () => {
     );
   });
 
+  it('still records announcements when started before the body exists', async () => {
+    /*
+     * Regression: the observers only attached when `document.body` was already
+     * present. `record()` is documented as something you drop into a `<script>`
+     * tag, and the earliest useful place for that is `<head>` — where body is
+     * null, nothing attached, and the whole session came back with no
+     * announcements and no dialogs at all.
+     */
+    const real = Object.getOwnPropertyDescriptor(Document.prototype, 'body');
+    Object.defineProperty(document, 'body', { configurable: true, get: () => null });
+
+    let tracker: Tracker;
+    try {
+      tracker = track();
+    } finally {
+      // Restore before mutating, so the rest of the test uses the real body.
+      delete (document as unknown as Record<string, unknown>).body;
+      if (real) Object.defineProperty(Document.prototype, 'body', real);
+    }
+
+    const status = document.createElement('div');
+    status.setAttribute('role', 'status');
+    document.body.append(status);
+    status.textContent = 'Saved your changes';
+    await settle();
+
+    expect(tracker.messages.find((message) => message.t === TraceMessageType.Announced)).toMatchObject(
+      { v: 'Saved your changes' },
+    );
+  });
+
   it('ignores aria-live="off" and ordinary content changes', async () => {
     const tracker = track();
     document.body.innerHTML = '<div aria-live="off" id="quiet"></div><p id="plain"></p>';

@@ -47,6 +47,21 @@ export interface TrackerOptions {
 
 const DEFAULT_MAX_MESSAGES = 5000;
 
+/**
+ * What the mutation observers watch.
+ *
+ * `documentElement`, not `body` — the tracker is documented as something you
+ * drop into a `<script>` tag, and the earliest useful place for that is
+ * `<head>`, where `body` does not exist yet. Observing `body` there attached
+ * nothing at all and silently produced a session with no announcements and no
+ * dialogs, which then reads as a site that never announces anything. The
+ * documentElement exists as soon as parsing starts and a subtree observer on it
+ * sees the body arrive.
+ */
+function observationRoot(target: Document): Element | null {
+  return target.documentElement ?? target.body ?? null;
+}
+
 function roleOf(element: Element): string {
   const explicit = element.getAttribute('role');
   if (explicit) return explicit.trim().toLowerCase().split(/\s+/)[0] ?? 'generic';
@@ -328,8 +343,9 @@ export class Tracker {
       }
     });
 
-    if (target.body) {
-      this.#liveObserver.observe(target.body, {
+    const root = observationRoot(target);
+    if (root) {
+      this.#liveObserver.observe(root, {
         subtree: true,
         childList: true,
         characterData: true,
@@ -360,8 +376,9 @@ export class Tracker {
     };
 
     this.#observer = new view.MutationObserver(scan);
-    if (target.body) {
-      this.#observer.observe(target.body, {
+    const root = observationRoot(target);
+    if (root) {
+      this.#observer.observe(root, {
         subtree: true,
         childList: true,
         attributes: true,
