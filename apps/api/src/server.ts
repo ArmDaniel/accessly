@@ -32,9 +32,14 @@ export async function buildServer(
       config.nodeEnv === 'test'
         ? false
         : { level: config.logLevel, transport: undefined },
-    // The audit endpoint accepts pasted documents, so the body limit is the
-    // document limit plus headroom for the JSON envelope.
-    bodyLimit: config.maxDocumentBytes + 64 * 1024,
+    /*
+     * The audit endpoint accepts pasted documents and base64-encoded uploads.
+     * Base64 inflates by 4/3, so sizing the limit to the raw document limit
+     * rejected any file over about three quarters of the advertised size — and
+     * did it with a bare 413, before the schema or the service's own size check
+     * could say anything useful about it.
+     */
+    bodyLimit: Math.ceil((config.maxDocumentBytes * 4) / 3) + 64 * 1024,
     trustProxy: true,
   });
 

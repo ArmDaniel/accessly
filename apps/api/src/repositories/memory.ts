@@ -279,8 +279,21 @@ export class InMemoryJourneyRepository implements JourneyRepository {
 export class InMemoryTraceRepository implements TraceRepository {
   readonly #store = new Map<string, JourneyTrace>();
 
+  /*
+   * Tenancy is part of the key, not a check after the fact.
+   *
+   * Trace ids are chosen by the customer's browser, so two organisations can
+   * collide by accident or on purpose. Keying on the id alone would let the
+   * second write destroy the first tenant's evidence while their report went on
+   * pointing at it. The separator is a NUL because it cannot occur in either
+   * component.
+   */
+  static #key(organisationId: string | null, id: string): string {
+    return `${organisationId ?? ''}\u0000${id}`;
+  }
+
   async save(trace: JourneyTrace): Promise<JourneyTrace> {
-    this.#store.set(trace.id, clone(trace));
+    this.#store.set(InMemoryTraceRepository.#key(trace.organisationId, trace.id), clone(trace));
     return clone(trace);
   }
 
@@ -292,9 +305,8 @@ export class InMemoryTraceRepository implements TraceRepository {
    * reads as missing instead of as somebody else's session.
    */
   async findById(id: string, organisationId: string): Promise<JourneyTrace | null> {
-    const found = this.#store.get(id);
-    if (!found || found.organisationId !== organisationId) return null;
-    return clone(found);
+    const found = this.#store.get(InMemoryTraceRepository.#key(organisationId, id));
+    return found ? clone(found) : null;
   }
 }
 

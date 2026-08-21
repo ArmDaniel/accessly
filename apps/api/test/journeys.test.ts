@@ -341,6 +341,31 @@ describe('reading journey reports', () => {
     expect(response.statusCode).toBe(404);
   });
 
+  it('will not let another organisation overwrite a stored trace', async () => {
+    /*
+     * Regression: trace ids come from the customer's browser, and the store was
+     * keyed on the id alone — so a colliding id from another tenant replaced the
+     * first tenant's evidence while their report went on pointing at it.
+     */
+    await ingest();
+    await ingest(OTHER_ORG);
+
+    const mine = await harness.app.inject({
+      method: 'GET',
+      url: '/v1/traces/trace-from-the-browser',
+    });
+    expect(mine.statusCode).toBe(200);
+    expect(mine.json().organisationId).toBe('00000000-0000-4000-8000-000000000001');
+
+    const theirs = await harness.app.inject({
+      method: 'GET',
+      url: '/v1/traces/trace-from-the-browser',
+      headers: { 'x-accessly-organisation': OTHER_ORG },
+    });
+    expect(theirs.statusCode).toBe(200);
+    expect(theirs.json().organisationId).toBe(OTHER_ORG);
+  });
+
   it('will not list reports for a journey belonging to someone else', async () => {
     const journeyId = (await createJourney(journeyBody, OTHER_ORG)).json().id;
 

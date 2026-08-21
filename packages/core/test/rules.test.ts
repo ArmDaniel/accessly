@@ -1139,3 +1139,31 @@ describe('coverage reporting', () => {
     }
   });
 });
+
+describe('the two rule surfaces do not report the same defect twice', () => {
+  /*
+   * Regression: `media-heading-order` listed `html` among its formats and did
+   * not skip it, so a skipped heading level was reported once by the DOM rule
+   * and again by the tree rule — two ids, one defect, and two "new issues" for
+   * the watcher to report on a single regression.
+   */
+  it('reports a skipped heading level once, not once per surface', () => {
+    const report = auditHtml({
+      html: page('<main><h1>A</h1><h4>B</h4><p>Body text.</p></main>'),
+      url: 'https://example.test/',
+    });
+
+    const skipped = report.findings.filter(
+      (finding) => finding.outcome === 'failed' && /level\(s\) are skipped/.test(finding.message),
+    );
+    expect(skipped.map((finding) => finding.ruleId)).toEqual(['heading-order']);
+  });
+
+  it('runs no media-* tree rule against HTML', () => {
+    const report = auditHtml({
+      html: page('<main><h1>A</h1><img src="a.png"><p>Body.</p></main>'),
+      url: 'https://example.test/',
+    });
+    expect(report.rules.filter((rule) => rule.ruleId.startsWith('media-'))).toEqual([]);
+  });
+});
