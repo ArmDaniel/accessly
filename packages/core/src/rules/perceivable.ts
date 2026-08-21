@@ -623,12 +623,90 @@ function isValidAutocomplete(value: string): boolean {
   return AUTOCOMPLETE_MODIFIERS.has(field) || AUTOCOMPLETE_FIELD_NAMES.has(field);
 }
 
-/** The name/id hint used to guess what a field collects — shared by filter and evaluate. */
-function autocompleteHint(element: Element): string {
-  return `${element.getAttribute('name') ?? ''}${element.getAttribute('id') ?? ''}`
+/**
+ * Words that make a trailing "name" a *person's* name.
+ *
+ * 1.3.5 is about fields collecting information about the *user*. "Name" is the
+ * one token common enough to appear in identifiers that have nothing to do with
+ * people — `productName`, `fileName`, `journeyName`, `siteName` — so a bare
+ * trailing "name" is only treated as personal when something in front of it
+ * says whose name it is.
+ */
+const PERSONAL_NAME_QUALIFIERS = new Set([
+  'first',
+  'last',
+  'given',
+  'family',
+  'full',
+  'sur',
+  'middle',
+  'user',
+  'nick',
+  'display',
+  'your',
+  'my',
+  'contact',
+  'customer',
+  'account',
+  'billing',
+  'shipping',
+]);
+
+/**
+ * Split a field's name and id into words.
+ *
+ * `camelCase`, `snake_case` and `kebab-case` all appear in real forms, and the
+ * distinction matters: matching a bare substring reported `hotel` as a
+ * telephone field and `capacity` as a city, which is the sort of false positive
+ * that teaches people to ignore the whole report.
+ */
+function autocompleteTokens(identifier: string): string[] {
+  return identifier
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .toLowerCase()
-    .replace(/[^a-z]/g, '');
+    .split(/[^a-z]+/)
+    .filter((token) => token.length > 0);
 }
+
+/** What one identifier implies, if anything. */
+function purposeOf(identifier: string): string | null {
+  const tokens = autocompleteTokens(identifier);
+  if (tokens.length === 0) return null;
+
+  // The whole identifier naming a known field wins outright: `postal-code`,
+  // `fullName`, `email`.
+  const exact = AUTOCOMPLETE_BY_NAME[tokens.join('')];
+  if (exact) return exact;
+
+  for (const [index, token] of tokens.entries()) {
+    const suggestion = AUTOCOMPLETE_BY_NAME[token];
+    if (!suggestion) continue;
+
+    if (token === 'name') {
+      const qualifier = tokens[index - 1];
+      if (!qualifier || !PERSONAL_NAME_QUALIFIERS.has(qualifier)) continue;
+      return AUTOCOMPLETE_BY_NAME[qualifier] ?? suggestion;
+    }
+
+    return suggestion;
+  }
+
+  return null;
+}
+
+/**
+ * The autocomplete token this field's identifier implies, if any.
+ *
+ * `name` and `id` are read separately rather than concatenated: an id like
+ * `field-25` next to `name="email"` would otherwise dilute the identifier into
+ * something that matches nothing.
+ */
+function autocompletePurpose(element: Element): string | null {
+  return (
+    purposeOf(element.getAttribute('name') ?? '') ?? purposeOf(element.getAttribute('id') ?? '')
+  );
+}
+
 
 const identifyInputPurpose = elementRule({
   id: 'input-autocomplete',
@@ -644,8 +722,7 @@ const identifyInputPurpose = elementRule({
       return false;
     }
     if (!visible(element)) return false;
-    const hint = autocompleteHint(element);
-    return Object.keys(AUTOCOMPLETE_BY_NAME).some((key) => hint.includes(key));
+    return autocompletePurpose(element) !== null;
   },
   evaluate: (element) => {
     const autocomplete = (element.getAttribute('autocomplete') ?? '').trim().toLowerCase();
@@ -662,9 +739,7 @@ const identifyInputPurpose = elementRule({
 
     if (autocomplete.length > 0 && autocomplete !== 'off') return PASS;
 
-    const hint = autocompleteHint(element);
-    const match = Object.entries(AUTOCOMPLETE_BY_NAME).find(([key]) => hint.includes(key));
-    const suggestion = match?.[1] ?? 'the appropriate token';
+    const suggestion = autocompletePurpose(element) ?? 'the appropriate token';
 
     if (autocomplete === 'off') {
       return {
